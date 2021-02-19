@@ -2,12 +2,14 @@ module Main exposing (..)
 
 import Browser
 import Element as Ui
+import Element.Background as Background
 import Element.Font as Font
 import Html exposing (Html, text)
 import Material.Icons.Communication
 import Widget
 import Widget.Icon
 import Widget.Material
+import Widget.Material.Color
 
 
 
@@ -29,12 +31,12 @@ main =
 
 
 type alias Model =
-    { currentTime : Int }
+    { input : String }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { currentTime = 1 }
+    ( { input = "" }
     , Cmd.none
     )
 
@@ -45,11 +47,17 @@ init _ =
 
 type Msg
     = NoOp
+    | InputChanged String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update _ model =
-    ( model, Cmd.none )
+update msg model =
+    case msg of
+        NoOp ->
+            ( model, Cmd.none )
+
+        InputChanged text ->
+            ( { model | input = text }, Cmd.none )
 
 
 
@@ -63,6 +71,7 @@ view model =
             [ Font.external { url = "https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap", name = "Roboto" }
             ]
         , Font.color <| color Text
+        , Background.color <| color Bg
         ]
         (Ui.column
             [ Ui.width (Ui.fill |> Ui.maximum 1200), Ui.centerX ]
@@ -71,6 +80,13 @@ view model =
                 { text = "Submit"
                 , icon = Material.Icons.Communication.phone |> Widget.Icon.materialIcons
                 , onPress = Just NoOp
+                }
+            , Widget.textInput (Widget.Material.textInput Widget.Material.darkPalette)
+                { chips = []
+                , text = model.input
+                , placeholder = Nothing
+                , label = "Hoi"
+                , onChange = InputChanged
                 }
             ]
         )
@@ -95,10 +111,10 @@ color : AppColor -> Ui.Color
 color col =
     case col of
         Text ->
-            Ui.rgb255 0xEE 0xEE 0xEE
+            Ui.rgb255 0xFF 0xFF 0xFF
 
         TextInverted ->
             Ui.rgb255 0x33 0x33 0x33
 
         Bg ->
-            Ui.rgb255 0x22 0x28 0x31
+            Widget.Material.Color.fromColor Widget.Material.Color.dark
