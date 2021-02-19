@@ -4,8 +4,12 @@ import Browser
 import Element as Ui
 import Element.Background as Background
 import Element.Font as Font
-import Html exposing (Html, text)
-import Material.Icons.Communication
+import Element.Input as Input
+import Html
+import Html.Events
+import Json.Decode
+import Material.Icons.Action
+import Material.Icons.Content
 import Widget
 import Widget.Icon
 import Widget.Material
@@ -31,14 +35,38 @@ main =
 
 
 type alias Model =
-    { input : String }
+    { inputClient : String
+    , inputFirm : String
+    , inputComments : String
+    , inputSubTask : String
+    , tasks : List Task
+    , tempSubTasks : List SubTask
+    }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { input = "" }
+    ( { inputClient = ""
+      , inputFirm = ""
+      , inputComments = ""
+      , inputSubTask = ""
+      , tasks = []
+      , tempSubTasks = []
+      }
     , Cmd.none
     )
+
+
+type alias Task =
+    { client : String
+    , firm : String
+    , comments : String
+    , subTasks : List SubTask
+    }
+
+
+type alias SubTask =
+    { text : String, done : Bool }
 
 
 
@@ -46,25 +74,54 @@ init _ =
 
 
 type Msg
-    = NoOp
-    | InputChanged String
+    = InputClientChanged String
+    | InputFirmChanged String
+    | InputCommentsChanged String
+    | InputTaskChanged String
+    | AddTempSubTask
+    | AddTask
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        NoOp ->
-            ( model, Cmd.none )
+        InputClientChanged text ->
+            ( { model | inputClient = text }, Cmd.none )
 
-        InputChanged text ->
-            ( { model | input = text }, Cmd.none )
+        InputFirmChanged text ->
+            ( { model | inputFirm = text }, Cmd.none )
+
+        InputCommentsChanged text ->
+            ( { model | inputComments = text }, Cmd.none )
+
+        InputTaskChanged text ->
+            ( { model | inputSubTask = text }, Cmd.none )
+
+        AddTempSubTask ->
+            ( { model
+                | tempSubTasks = model.tempSubTasks ++ [ { text = model.inputSubTask, done = False } ]
+                , inputSubTask = ""
+              }
+            , Cmd.none
+            )
+
+        AddTask ->
+            ( { model
+                | tasks = model.tasks ++ [ { client = model.inputClient, firm = model.inputFirm, comments = model.inputComments, subTasks = model.tempSubTasks } ]
+                , tempSubTasks = []
+                , inputClient = ""
+                , inputFirm = ""
+                , inputComments = ""
+              }
+            , Cmd.none
+            )
 
 
 
 -- VIEW
 
 
-view : Model -> Html Msg
+view : Model -> Html.Html Msg
 view model =
     Ui.layout
         [ Font.family
@@ -74,22 +131,81 @@ view model =
         , Background.color <| color Bg
         ]
         (Ui.column
-            [ Ui.width (Ui.fill |> Ui.maximum 1200), Ui.centerX ]
-            [ Ui.text "hi"
-            , Widget.button (Widget.Material.containedButton Widget.Material.darkPalette)
-                { text = "Submit"
-                , icon = Material.Icons.Communication.phone |> Widget.Icon.materialIcons
-                , onPress = Just NoOp
-                }
-            , Widget.textInput (Widget.Material.textInput Widget.Material.darkPalette)
-                { chips = []
-                , text = model.input
+            [ Ui.width (Ui.fill |> Ui.maximum 1200), Ui.centerX, Ui.spacing 32 ]
+            [ --  Client
+              Ui.row
+                []
+                [ Input.text
+                    [ Font.color <| color TextInverted
+                    , Ui.width (Ui.shrink |> Ui.minimum 200)
+                    , Input.focusedOnLoad
+                    ]
+                    { onChange = InputClientChanged
+                    , text = model.inputClient
+                    , placeholder = Nothing
+                    , label = Input.labelLeft [] <| Ui.text "Klant"
+                    }
+
+                --  Firm
+                , Input.text
+                    [ Font.color <| color TextInverted
+                    , Ui.width (Ui.shrink |> Ui.minimum 200)
+                    ]
+                    { onChange = InputFirmChanged
+                    , text = model.inputFirm
+                    , placeholder = Nothing
+                    , label = Input.labelLeft [] <| Ui.text "van firma"
+                    }
+                ]
+
+            --  Comments
+            , Input.multiline
+                [ Font.color <| color TextInverted
+                , Ui.width (Ui.shrink |> Ui.minimum 600)
+                , Ui.height <| Ui.px 120
+                ]
+                { onChange = InputCommentsChanged
+                , text = model.inputComments
                 , placeholder = Nothing
-                , label = "Hoi"
-                , onChange = InputChanged
+                , label = Input.labelHidden "Comments"
+                , spellcheck = True
+                }
+            , Ui.text "Subtaken"
+            , Ui.row []
+                [ Input.text
+                    [ Font.color <| color TextInverted
+                    , Ui.width (Ui.shrink |> Ui.minimum 200)
+                    , onEnter AddTempSubTask
+                    ]
+                    { onChange = InputTaskChanged
+                    , text = model.inputSubTask
+                    , placeholder = Nothing
+                    , label = Input.labelHidden "Add subtask"
+                    }
+                , Widget.button (Widget.Material.containedButton Widget.Material.darkPalette)
+                    { text = "Subtaak toevoegen"
+                    , icon = Material.Icons.Content.add |> Widget.Icon.materialIcons
+                    , onPress = Just AddTempSubTask
+                    }
+                ]
+            , Ui.column [] <| viewSubTasks model
+            , Widget.button (Widget.Material.containedButton Widget.Material.darkPalette)
+                { text = "Taak toevoegen"
+                , icon = Material.Icons.Content.add |> Widget.Icon.materialIcons
+                , onPress = Just AddTask
                 }
             ]
         )
+
+
+viewSubTasks : Model -> List (Ui.Element msg)
+viewSubTasks model =
+    List.map viewSubTask model.tempSubTasks
+
+
+viewSubTask : SubTask -> Ui.Element msg
+viewSubTask subTask =
+    Ui.text subTask.text
 
 
 
@@ -105,6 +221,23 @@ type AppColor
     = Text
     | TextInverted
     | Bg
+
+
+onEnter : msg -> Ui.Attribute msg
+onEnter msg =
+    Ui.htmlAttribute
+        (Html.Events.on "keyup"
+            (Json.Decode.field "key" Json.Decode.string
+                |> Json.Decode.andThen
+                    (\key ->
+                        if key == "Enter" then
+                            Json.Decode.succeed msg
+
+                        else
+                            Json.Decode.fail "Not the enter key"
+                    )
+            )
+        )
 
 
 color : AppColor -> Ui.Color
