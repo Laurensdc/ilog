@@ -3,6 +3,7 @@ module Main exposing (..)
 import Browser
 import Element as Ui
 import Element.Background as Background
+import Element.Events
 import Element.Font as Font
 import Element.Input as Input
 import Html
@@ -80,6 +81,7 @@ type Msg
     | InputTaskChanged String
     | AddTempSubTask
     | AddTask
+    | DeleteTempSubTask SubTask
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -116,6 +118,13 @@ update msg model =
             , Cmd.none
             )
 
+        DeleteTempSubTask subtask ->
+            ( { model
+                | tempSubTasks = List.filter (\s -> s /= subtask) model.tempSubTasks
+              }
+            , Cmd.none
+            )
+
 
 
 -- VIEW
@@ -129,6 +138,7 @@ view model =
             ]
         , Font.color <| color Text
         , Background.color <| color Bg
+        , Ui.paddingXY 0 32
         ]
         (Ui.column
             [ Ui.width (Ui.fill |> Ui.maximum 1200), Ui.centerX, Ui.spacing 32 ]
@@ -176,17 +186,20 @@ view model =
                     [ Font.color <| color TextInverted
                     , Ui.width (Ui.shrink |> Ui.minimum 200)
                     , onEnter AddTempSubTask
+                    , Ui.htmlAttribute
+                        (Html.Events.onBlur AddTempSubTask)
                     ]
                     { onChange = InputTaskChanged
                     , text = model.inputSubTask
                     , placeholder = Nothing
                     , label = Input.labelHidden "Add subtask"
                     }
-                , Widget.button (Widget.Material.containedButton Widget.Material.darkPalette)
-                    { text = "Subtaak toevoegen"
-                    , icon = Material.Icons.Content.add |> Widget.Icon.materialIcons
-                    , onPress = Just AddTempSubTask
-                    }
+
+                -- , Widget.button (Widget.Material.containedButton Widget.Material.darkPalette)
+                --     { text = "Subtaak toevoegen"
+                --     , icon = Material.Icons.Content.add |> Widget.Icon.materialIcons
+                --     , onPress = Just AddTempSubTask
+                --     }
                 ]
             , Ui.column [] <| viewSubTasks model
             , Widget.button (Widget.Material.containedButton Widget.Material.darkPalette)
@@ -198,14 +211,21 @@ view model =
         )
 
 
-viewSubTasks : Model -> List (Ui.Element msg)
+viewSubTasks : Model -> List (Ui.Element Msg)
 viewSubTasks model =
     List.map viewSubTask model.tempSubTasks
 
 
-viewSubTask : SubTask -> Ui.Element msg
+viewSubTask : SubTask -> Ui.Element Msg
 viewSubTask subTask =
-    Ui.text subTask.text
+    Ui.row []
+        [ Ui.el [ Ui.paddingEach { top = 0, right = 16, bottom = 0, left = 0 } ] (Ui.text subTask.text)
+        , Widget.iconButton (Widget.Material.containedButton Widget.Material.darkPalette)
+            { icon = Material.Icons.Action.delete |> Widget.Icon.materialIcons
+            , text = "Delete task"
+            , onPress = Just (DeleteTempSubTask subTask)
+            }
+        ]
 
 
 
