@@ -10550,9 +10550,20 @@ var $elm$core$Basics$never = function (_v0) {
 	}
 };
 var $elm$browser$Browser$element = _Browser_element;
+var $elm$time$Time$Posix = function (a) {
+	return {$: 'Posix', a: a};
+};
+var $elm$time$Time$millisToPosix = $elm$time$Time$Posix;
 var $author$project$Main$init = function (_v0) {
 	return _Utils_Tuple2(
-		{inputComments: '', inputSubTask: '', inputWho: '', tasks: _List_Nil, tempSubTasks: _List_Nil},
+		{
+			inputComments: '',
+			inputSubTask: '',
+			inputWho: '',
+			tasks: _List_Nil,
+			tempSubTasks: _List_Nil,
+			time: $elm$time$Time$millisToPosix(0)
+		},
 		$elm$core$Platform$Cmd$none);
 };
 var $elm$core$Platform$Sub$batch = _Platform_batch;
@@ -10588,7 +10599,7 @@ var $author$project$Main$update = F2(
 						model,
 						{inputComments: text}),
 					$elm$core$Platform$Cmd$none);
-			case 'InputTaskChanged':
+			case 'InputSubTaskChanged':
 				var text = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
@@ -10609,7 +10620,7 @@ var $author$project$Main$update = F2(
 									]))
 						}),
 					$elm$core$Platform$Cmd$none);
-			case 'AddTask':
+			case 'AddCall':
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -10620,12 +10631,12 @@ var $author$project$Main$update = F2(
 								model.tasks,
 								_List_fromArray(
 									[
-										{comments: model.inputComments, subTasks: model.tempSubTasks, who: model.inputWho}
+										{comments: model.inputComments, subTasks: model.tempSubTasks, when: model.time, who: model.inputWho}
 									])),
 							tempSubTasks: _List_Nil
 						}),
 					$elm$core$Platform$Cmd$none);
-			default:
+			case 'DeleteTempSubTask':
 				var subtask = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
@@ -10639,16 +10650,23 @@ var $author$project$Main$update = F2(
 								model.tempSubTasks)
 						}),
 					$elm$core$Platform$Cmd$none);
+			default:
+				var time = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{time: time}),
+					$elm$core$Platform$Cmd$none);
 		}
 	});
-var $author$project$Main$AddTask = {$: 'AddTask'};
+var $author$project$Main$AddCall = {$: 'AddCall'};
 var $author$project$Main$AddTempSubTask = {$: 'AddTempSubTask'};
 var $author$project$Main$Bg = {$: 'Bg'};
 var $author$project$Main$InputCommentsChanged = function (a) {
 	return {$: 'InputCommentsChanged', a: a};
 };
-var $author$project$Main$InputTaskChanged = function (a) {
-	return {$: 'InputTaskChanged', a: a};
+var $author$project$Main$InputSubTaskChanged = function (a) {
+	return {$: 'InputSubTaskChanged', a: a};
 };
 var $author$project$Main$InputWhoChanged = function (a) {
 	return {$: 'InputWhoChanged', a: a};
@@ -18395,7 +18413,7 @@ var $author$project$Main$view = function (model) {
 									$mdgriffith$elm_ui$Element$Input$labelAbove,
 									_List_Nil,
 									$mdgriffith$elm_ui$Element$text('Taak toevoegen')),
-								onChange: $author$project$Main$InputTaskChanged,
+								onChange: $author$project$Main$InputSubTaskChanged,
 								placeholder: $elm$core$Maybe$Nothing,
 								text: model.inputSubTask
 							})
@@ -18409,7 +18427,7 @@ var $author$project$Main$view = function (model) {
 					$Orasund$elm_ui_widgets$Widget$Material$containedButton($Orasund$elm_ui_widgets$Widget$Material$darkPalette),
 					{
 						icon: $Orasund$elm_ui_widgets$Widget$Icon$materialIcons($danmarcab$material_icons$Material$Icons$Content$add),
-						onPress: $elm$core$Maybe$Just($author$project$Main$AddTask),
+						onPress: $elm$core$Maybe$Just($author$project$Main$AddCall),
 						text: 'Gesprek opslaan'
 					}),
 					A2(
@@ -18421,7 +18439,7 @@ var $author$project$Main$view = function (model) {
 var $author$project$Main$main = $elm$browser$Browser$element(
 	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$view});
 _Platform_export({'Main':{'init':$author$project$Main$main(
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.SubTask":{"args":[],"type":"{ text : String.String, done : Basics.Bool }"}},"unions":{"Main.Msg":{"args":[],"tags":{"InputWhoChanged":["String.String"],"InputCommentsChanged":["String.String"],"InputTaskChanged":["String.String"],"AddTempSubTask":[],"AddTask":[],"DeleteTempSubTask":["Main.SubTask"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"String.String":{"args":[],"tags":{"String":[]}}}}})}});}(this));
+	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.SubTask":{"args":[],"type":"{ text : String.String, done : Basics.Bool }"}},"unions":{"Main.Msg":{"args":[],"tags":{"InputWhoChanged":["String.String"],"InputCommentsChanged":["String.String"],"InputSubTaskChanged":["String.String"],"AddTempSubTask":[],"AddCall":[],"DeleteTempSubTask":["Main.SubTask"],"GetTimeNow":["Time.Posix"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"String.String":{"args":[],"tags":{"String":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}}}}})}});}(this));
 
   var app = Elm.Main.init({ node: document.getElementById("elm") });
 }

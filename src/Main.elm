@@ -13,6 +13,7 @@ import Json.Decode
 import Material.Icons.Action
 import Material.Icons.Content
 import Svg
+import Task
 import Time
 import Widget
 import Widget.Icon as Icon
@@ -44,6 +45,7 @@ type alias Model =
     , inputSubTask : String
     , tasks : List Task
     , tempSubTasks : List SubTask
+    , time : Time.Posix
     }
 
 
@@ -54,6 +56,7 @@ init _ =
       , inputSubTask = ""
       , tasks = []
       , tempSubTasks = []
+      , time = Time.millisToPosix 0
       }
     , Cmd.none
     )
@@ -62,6 +65,7 @@ init _ =
 type alias Task =
     { who : String
     , comments : String
+    , when : Time.Posix
     , subTasks : List SubTask
     }
 
@@ -81,6 +85,7 @@ type Msg
     | AddTempSubTask
     | AddCall
     | DeleteTempSubTask SubTask
+    | GetTimeNow Time.Posix
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -109,7 +114,14 @@ update msg model =
 
         AddCall ->
             ( { model
-                | tasks = model.tasks ++ [ { who = model.inputWho, comments = model.inputComments, subTasks = model.tempSubTasks } ]
+                | tasks =
+                    model.tasks
+                        ++ [ { who = model.inputWho
+                             , comments = model.inputComments
+                             , subTasks = model.tempSubTasks
+                             , when = model.time
+                             }
+                           ]
                 , tempSubTasks = []
                 , inputWho = ""
                 , inputComments = ""
@@ -123,6 +135,18 @@ update msg model =
               }
             , Cmd.none
             )
+
+        GetTimeNow time ->
+            ( { model
+                | time = time
+              }
+            , Cmd.none
+            )
+
+
+getTimeNow : Cmd Msg
+getTimeNow =
+    Task.perform GetTimeNow Time.now
 
 
 
