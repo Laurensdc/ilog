@@ -43,7 +43,7 @@ type alias Model =
     { inputWho : String
     , inputComments : String
     , inputSubTask : String
-    , tasks : List Task
+    , calls : List Task
     , tempSubTasks : List SubTask
     , time : Time.Posix
     }
@@ -54,7 +54,7 @@ init _ =
     ( { inputWho = ""
       , inputComments = ""
       , inputSubTask = ""
-      , tasks = []
+      , calls = []
       , tempSubTasks = []
       , time = Time.millisToPosix 0
       }
@@ -114,8 +114,8 @@ update msg model =
 
         AddCall ->
             ( { model
-                | tasks =
-                    model.tasks
+                | calls =
+                    model.calls
                         ++ [ { who = model.inputWho
                              , comments = model.inputComments
                              , subTasks = model.tempSubTasks
@@ -221,26 +221,30 @@ view model =
                 , icon = Material.Icons.Content.add |> Icon.materialIcons
                 , onPress = Just AddCall
                 }
-            , Ui.column [] <| viewTasks model
+            , Ui.column [] <| viewCalls model
             ]
         )
 
 
-viewTasks : Model -> List (Ui.Element Msg)
-viewTasks model =
-    List.map viewTask model.tasks
+viewCalls : Model -> List (Ui.Element Msg)
+viewCalls model =
+    List.map viewCall model.calls
 
 
-viewTask : Task -> Ui.Element Msg
-viewTask task =
+viewCall : Task -> Ui.Element Msg
+viewCall task =
     let
         subtasks =
             List.map (\subtask -> Ui.text subtask.text) task.subTasks
     in
-    Ui.row []
-        (List.append
-            [ Ui.text (task.who ++ " " ++ task.comments) ]
-            subtasks
+    Ui.column [ Ui.paddingXY 0 16 ]
+        ([ Ui.column []
+            [ Ui.el [ Font.bold ] (Ui.text task.who)
+            , Ui.text task.comments
+            , Ui.text "Taken"
+            ]
+         ]
+            ++ subtasks
         )
 
 
