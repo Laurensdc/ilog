@@ -1,6 +1,7 @@
 module Main exposing (..)
 
 import Browser
+import Color
 import Element as Ui
 import Element.Background as Background
 import Element.Events
@@ -11,8 +12,10 @@ import Html.Events
 import Json.Decode
 import Material.Icons.Action
 import Material.Icons.Content
+import Svg
+import Time
 import Widget
-import Widget.Icon
+import Widget.Icon as Icon
 import Widget.Material
 import Widget.Material.Color
 
@@ -36,8 +39,7 @@ main =
 
 
 type alias Model =
-    { inputClient : String
-    , inputFirm : String
+    { inputWho : String
     , inputComments : String
     , inputSubTask : String
     , tasks : List Task
@@ -47,8 +49,7 @@ type alias Model =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { inputClient = ""
-      , inputFirm = ""
+    ( { inputWho = ""
       , inputComments = ""
       , inputSubTask = ""
       , tasks = []
@@ -59,8 +60,7 @@ init _ =
 
 
 type alias Task =
-    { client : String
-    , firm : String
+    { who : String
     , comments : String
     , subTasks : List SubTask
     }
@@ -75,44 +75,43 @@ type alias SubTask =
 
 
 type Msg
-    = InputClientChanged String
-    | InputFirmChanged String
+    = InputWhoChanged String
     | InputCommentsChanged String
-    | InputTaskChanged String
+    | InputSubTaskChanged String
     | AddTempSubTask
-    | AddTask
+    | AddCall
     | DeleteTempSubTask SubTask
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        InputClientChanged text ->
-            ( { model | inputClient = text }, Cmd.none )
-
-        InputFirmChanged text ->
-            ( { model | inputFirm = text }, Cmd.none )
+        InputWhoChanged text ->
+            ( { model | inputWho = text }, Cmd.none )
 
         InputCommentsChanged text ->
             ( { model | inputComments = text }, Cmd.none )
 
-        InputTaskChanged text ->
+        InputSubTaskChanged text ->
             ( { model | inputSubTask = text }, Cmd.none )
 
         AddTempSubTask ->
-            ( { model
-                | tempSubTasks = model.tempSubTasks ++ [ { text = model.inputSubTask, done = False } ]
-                , inputSubTask = ""
-              }
-            , Cmd.none
-            )
+            if model.inputSubTask == "" then
+                ( model, Cmd.none )
 
-        AddTask ->
+            else
+                ( { model
+                    | tempSubTasks = model.tempSubTasks ++ [ { text = model.inputSubTask, done = False } ]
+                    , inputSubTask = ""
+                  }
+                , Cmd.none
+                )
+
+        AddCall ->
             ( { model
-                | tasks = model.tasks ++ [ { client = model.inputClient, firm = model.inputFirm, comments = model.inputComments, subTasks = model.tempSubTasks } ]
+                | tasks = model.tasks ++ [ { who = model.inputWho, comments = model.inputComments, subTasks = model.tempSubTasks } ]
                 , tempSubTasks = []
-                , inputClient = ""
-                , inputFirm = ""
+                , inputWho = ""
                 , inputComments = ""
               }
             , Cmd.none
@@ -136,37 +135,30 @@ view model =
         [ Font.family
             [ Font.external { url = "https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap", name = "Roboto" }
             ]
+        , Font.size 18
         , Font.color <| color Text
         , Background.color <| color Bg
         , Ui.paddingXY 0 32
         ]
         (Ui.column
-            [ Ui.width (Ui.fill |> Ui.maximum 1200), Ui.centerX, Ui.spacing 32 ]
-            [ --  Client
-              Ui.row
-                []
-                [ Input.text
-                    [ Font.color <| color TextInverted
-                    , Ui.width (Ui.shrink |> Ui.minimum 200)
-                    , Input.focusedOnLoad
-                    ]
-                    { onChange = InputClientChanged
-                    , text = model.inputClient
-                    , placeholder = Nothing
-                    , label = Input.labelLeft [] <| Ui.text "Klant"
-                    }
-
-                --  Firm
-                , Input.text
-                    [ Font.color <| color TextInverted
-                    , Ui.width (Ui.shrink |> Ui.minimum 200)
-                    ]
-                    { onChange = InputFirmChanged
-                    , text = model.inputFirm
-                    , placeholder = Nothing
-                    , label = Input.labelLeft [] <| Ui.text "van firma"
-                    }
+            [ Ui.width (Ui.fill |> Ui.maximum 1200)
+            , Ui.centerX
+            , Ui.spacing 16
+            ]
+            [ -- Title
+              Ui.el [ Font.size 24 ]
+                (Ui.text "Voeg een gesprek toe")
+            , --  Client
+              Input.text
+                [ Font.color <| color TextInverted
+                , Ui.width (Ui.shrink |> Ui.minimum 200)
+                , Input.focusedOnLoad
                 ]
+                { onChange = InputWhoChanged
+                , text = model.inputWho
+                , placeholder = Just (Input.placeholder [] (Ui.text "Jef van de Carrefour"))
+                , label = Input.labelAbove [] <| Ui.text "Wie?"
+                }
 
             --  Comments
             , Input.multiline
@@ -177,22 +169,20 @@ view model =
                 { onChange = InputCommentsChanged
                 , text = model.inputComments
                 , placeholder = Nothing
-                , label = Input.labelHidden "Comments"
+                , label = Input.labelAbove [] <| Ui.text "Opmerkingen"
                 , spellcheck = True
                 }
-            , Ui.text "Subtaken"
-            , Ui.row []
+            , Ui.row [ Ui.width (Ui.shrink |> Ui.minimum 200) ]
                 [ Input.text
                     [ Font.color <| color TextInverted
-                    , Ui.width (Ui.shrink |> Ui.minimum 200)
                     , onEnter AddTempSubTask
                     , Ui.htmlAttribute
                         (Html.Events.onBlur AddTempSubTask)
                     ]
-                    { onChange = InputTaskChanged
+                    { onChange = InputSubTaskChanged
                     , text = model.inputSubTask
                     , placeholder = Nothing
-                    , label = Input.labelHidden "Add subtask"
+                    , label = Input.labelAbove [] <| Ui.text "Taak toevoegen"
                     }
 
                 -- , Widget.button (Widget.Material.containedButton Widget.Material.darkPalette)
@@ -203,11 +193,30 @@ view model =
                 ]
             , Ui.column [] <| viewSubTasks model
             , Widget.button (Widget.Material.containedButton Widget.Material.darkPalette)
-                { text = "Taak toevoegen"
-                , icon = Material.Icons.Content.add |> Widget.Icon.materialIcons
-                , onPress = Just AddTask
+                { text = "Gesprek opslaan"
+                , icon = Material.Icons.Content.add |> Icon.materialIcons
+                , onPress = Just AddCall
                 }
+            , Ui.column [] <| viewTasks model
             ]
+        )
+
+
+viewTasks : Model -> List (Ui.Element Msg)
+viewTasks model =
+    List.map viewTask model.tasks
+
+
+viewTask : Task -> Ui.Element Msg
+viewTask task =
+    let
+        subtasks =
+            List.map (\subtask -> Ui.text subtask.text) task.subTasks
+    in
+    Ui.row []
+        (List.append
+            [ Ui.text (task.who ++ " " ++ task.comments) ]
+            subtasks
         )
 
 
@@ -220,11 +229,13 @@ viewSubTask : SubTask -> Ui.Element Msg
 viewSubTask subTask =
     Ui.row []
         [ Ui.el [ Ui.paddingEach { top = 0, right = 16, bottom = 0, left = 0 } ] (Ui.text subTask.text)
-        , Widget.iconButton (Widget.Material.containedButton Widget.Material.darkPalette)
-            { icon = Material.Icons.Action.delete |> Widget.Icon.materialIcons
-            , text = "Delete task"
-            , onPress = Just (DeleteTempSubTask subTask)
-            }
+
+        -- , Widget.iconButton (Widget.Material.containedButton Widget.Material.darkPalette)
+        --     { icon = Icon.materialIcons Material.Icons.Action.delete
+        --     , text = "Delete task"
+        --     , onPress = Just (DeleteTempSubTask subTask)
+        --     }
+        , Ui.el [ Element.Events.onClick (DeleteTempSubTask subTask) ] (Icon.materialIcons Material.Icons.Action.delete { size = 24, color = Color.lightRed })
         ]
 
 
