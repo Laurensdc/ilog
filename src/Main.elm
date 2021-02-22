@@ -43,9 +43,9 @@ type alias Model =
     { inputWho : String
     , inputComments : String
     , inputSubTask : String
-    , calls : List Task
+    , calls : List Call
     , tempSubTasks : List SubTask
-    , time : Time.Posix
+    , timeZone : Time.Zone
     }
 
 
@@ -54,15 +54,26 @@ init _ =
     ( { inputWho = ""
       , inputComments = ""
       , inputSubTask = ""
-      , calls = []
+      , calls =
+            [ { who = "Jan van Carrefour"
+              , comments = "Nog bellen naar labo enal, kwenie"
+              , when = Time.millisToPosix 1613981969763
+              , subTasks = [ { text = "Bel labo", done = False }, { text = "Check die stock", done = False } ]
+              }
+            , { who = "Eva / Beyond Meat"
+              , comments = "Wa een tang"
+              , when = Time.millisToPosix 1613981973556
+              , subTasks = [ { text = "Bel Cissy", done = False }, { text = "Dingske mailen met vraag", done = False } ]
+              }
+            ]
       , tempSubTasks = []
-      , time = Time.millisToPosix 0
+      , timeZone = Time.utc
       }
-    , Cmd.none
+    , Task.perform GetTimeZone Time.here
     )
 
 
-type alias Task =
+type alias Call =
     { who : String
     , comments : String
     , when : Time.Posix
@@ -84,8 +95,9 @@ type Msg
     | InputSubTaskChanged String
     | AddTempSubTask
     | AddCall
+    | AddCallWithTime Time.Posix
     | DeleteTempSubTask SubTask
-    | GetTimeNow Time.Posix
+    | GetTimeZone Time.Zone
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -113,13 +125,16 @@ update msg model =
                 )
 
         AddCall ->
+            ( model, Task.perform AddCallWithTime Time.now )
+
+        AddCallWithTime time ->
             ( { model
                 | calls =
                     model.calls
                         ++ [ { who = model.inputWho
                              , comments = model.inputComments
                              , subTasks = model.tempSubTasks
-                             , when = model.time
+                             , when = time
                              }
                            ]
                 , tempSubTasks = []
@@ -136,17 +151,8 @@ update msg model =
             , Cmd.none
             )
 
-        GetTimeNow time ->
-            ( { model
-                | time = time
-              }
-            , Cmd.none
-            )
-
-
-getTimeNow : Cmd Msg
-getTimeNow =
-    Task.perform GetTimeNow Time.now
+        GetTimeZone newZone ->
+            ( { model | timeZone = newZone }, Cmd.none )
 
 
 
@@ -231,21 +237,141 @@ viewCalls model =
     List.map viewCall model.calls
 
 
-viewCall : Task -> Ui.Element Msg
-viewCall task =
+viewCall : Call -> Ui.Element Msg
+viewCall call =
     let
         subtasks =
-            List.map (\subtask -> Ui.text subtask.text) task.subTasks
+            List.map (\subtask -> Ui.text subtask.text) call.subTasks
     in
     Ui.column [ Ui.paddingXY 0 16 ]
         ([ Ui.column []
-            [ Ui.el [ Font.bold ] (Ui.text task.who)
-            , Ui.text task.comments
+            [ Ui.el [ Font.bold ] (Ui.text call.who)
+            , Ui.el [ Font.italic ] (Ui.text (dateToHumanStr Time.utc call.when))
+            , Ui.text call.comments
             , Ui.text "Taken"
             ]
          ]
             ++ subtasks
         )
+
+
+dateToHumanStr : Time.Zone -> Time.Posix -> String
+dateToHumanStr zone posix =
+    toDutchWeekday (Time.toWeekday zone posix) ++ " " ++ toTwoDigits (Time.toDay zone posix) ++ "/" ++ toDutchMonthNumber (Time.toMonth zone posix)
+
+
+toTwoDigits : Int -> String
+toTwoDigits i =
+    if i < 10 then
+        "0" ++ String.fromInt i
+
+    else
+        String.fromInt i
+
+
+toDutchMonthStr : Time.Month -> String
+toDutchMonthStr month =
+    case month of
+        Time.Jan ->
+            "januari"
+
+        Time.Feb ->
+            "februari"
+
+        Time.Mar ->
+            "maart"
+
+        Time.Apr ->
+            "april"
+
+        Time.May ->
+            "mei"
+
+        Time.Jun ->
+            "juni"
+
+        Time.Jul ->
+            "juli"
+
+        Time.Aug ->
+            "augustus"
+
+        Time.Sep ->
+            "september"
+
+        Time.Oct ->
+            "oktober"
+
+        Time.Nov ->
+            "november"
+
+        Time.Dec ->
+            "december"
+
+
+toDutchMonthNumber : Time.Month -> String
+toDutchMonthNumber month =
+    case month of
+        Time.Jan ->
+            "01"
+
+        Time.Feb ->
+            "02"
+
+        Time.Mar ->
+            "03"
+
+        Time.Apr ->
+            "04"
+
+        Time.May ->
+            "05"
+
+        Time.Jun ->
+            "06"
+
+        Time.Jul ->
+            "07"
+
+        Time.Aug ->
+            "08"
+
+        Time.Sep ->
+            "09"
+
+        Time.Oct ->
+            "10"
+
+        Time.Nov ->
+            "11"
+
+        Time.Dec ->
+            "12"
+
+
+toDutchWeekday : Time.Weekday -> String
+toDutchWeekday day =
+    case day of
+        Time.Mon ->
+            "Maandag"
+
+        Time.Tue ->
+            "Dinsdag"
+
+        Time.Wed ->
+            "Woensdag"
+
+        Time.Thu ->
+            "Donderdag"
+
+        Time.Fri ->
+            "Vrijdag"
+
+        Time.Sat ->
+            "Zaterdag"
+
+        Time.Sun ->
+            "Zondag"
 
 
 viewSubTasks : Model -> List (Ui.Element Msg)
