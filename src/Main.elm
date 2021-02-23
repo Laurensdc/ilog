@@ -308,12 +308,6 @@ view model =
                     , placeholder = Nothing
                     , label = Input.labelAbove [] <| Ui.text "Taak toevoegen"
                     }
-
-                -- , Widget.button (Widget.Material.containedButton Widget.Material.darkPalette)
-                --     { text = "Subtaak toevoegen"
-                --     , icon = Material.Icons.Content.add |> Widget.Icon.materialIcons
-                --     , onPress = Just AddTempSubTask
-                --     }
                 ]
             , Ui.column [] <| viewPreSaveSubTasks model
             , Widget.button (Widget.Material.containedButton Widget.Material.darkPalette)
@@ -321,21 +315,54 @@ view model =
                 , icon = Material.Icons.Content.add |> Icon.materialIcons
                 , onPress = Just AddCall
                 }
-            , Ui.column [] <| viewCalls model.calls model.subTasks model.timeZone
-            , Ui.el [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 } ] (Ui.text "Archief")
-            , Ui.column [] <| viewCalls model.archivedCalls model.subTasks model.timeZone
+
+            -- Calls
+            , Ui.el
+                [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 }
+                , Font.size 24
+                , Font.bold
+                ]
+                (Ui.text "Gesprekken / todo's")
+            , Ui.column [] <| viewCalls model.calls model.subTasks model.timeZone { archived = False }
+
+            -- Archive
+            , if List.length model.archivedCalls > 0 then
+                Ui.el
+                    [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 }
+                    , Font.size 24
+                    , Font.bold
+                    ]
+                    (Ui.text
+                        "Archief"
+                    )
+
+              else
+                Ui.none
+            , Ui.column [] <| viewCalls model.archivedCalls model.subTasks model.timeZone { archived = True }
             ]
         )
 
 
-viewCalls : List Call -> List SubTask -> Time.Zone -> List (Ui.Element Msg)
-viewCalls calls subtasks timeZone =
+viewCalls : List Call -> List SubTask -> Time.Zone -> { archived : Bool } -> List (Ui.Element Msg)
+viewCalls calls subtasks timeZone options =
     List.map
         (\call ->
-            Ui.row [ Ui.paddingXY 0 16 ]
+            Ui.row
+                [ Ui.paddingXY 0 16
+                , if options.archived == True then
+                    Font.strike
+
+                  else
+                    Font.regular
+                ]
                 [ -- The little ball to click
                   Ui.el [ Ui.width (Ui.px 32), Ui.alignTop, Element.Events.onClick (ArchiveCall call) ]
-                    (Icon.materialIcons Material.Icons.Toggle.radio_button_unchecked { size = 24, color = Color.lightGray })
+                    (if options.archived == True then
+                        Icon.materialIcons Material.Icons.Toggle.check_box { size = 24, color = Color.lightGreen }
+
+                     else
+                        Icon.materialIcons Material.Icons.Toggle.radio_button_unchecked { size = 24, color = Color.lightGray }
+                    )
                 , Ui.column []
                     ([ Ui.column []
                         [ Ui.el [ Font.bold ] (Ui.text call.who)
