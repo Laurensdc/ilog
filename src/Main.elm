@@ -60,22 +60,22 @@ init _ =
       , inputSubTask = ""
       , inputSearch = ""
       , calls =
-            [ { id = FromBackend 1
-              , who = "Jan van Carrefour"
-              , comments = "Nog bellen naar labo enal, kwenie"
-              , when = Time.millisToPosix 1613870869763
-              }
-            , { id = FromBackend 2
-              , who = "Eva / Beyond Meat"
-              , comments = "Wa een tang"
-              , when = Time.millisToPosix 1613981973556
-              }
+            [--     { id = FromBackend 1
+             --   , who = "Jan van Carrefour"
+             --   , comments = "Nog bellen naar labo enal, kwenie"
+             --   , when = Time.millisToPosix 1613870869763
+             --   }
+             -- , { id = FromBackend 2
+             --   , who = "Eva / Beyond Meat"
+             --   , comments = "Wa een tang"
+             --   , when = Time.millisToPosix 1613981973556
+             --   }
             ]
       , subTasks =
-            [ { callId = FromBackend 1, text = "Bel labo", done = False }
-            , { callId = FromBackend 1, text = "Check die stock", done = False }
-            , { callId = FromBackend 2, text = "Bel Cissy", done = False }
-            , { callId = FromBackend 2, text = "Dingske mailen met vraag", done = False }
+            [--     { callId = FromBackend 1, text = "Bel labo", done = False }
+             -- , { callId = FromBackend 1, text = "Check die stock", done = False }
+             -- , { callId = FromBackend 2, text = "Bel Cissy", done = False }
+             -- , { callId = FromBackend 2, text = "Dingske mailen met vraag", done = False }
             ]
       , archivedCalls = []
       , preSaveSubTasks = []
