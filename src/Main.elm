@@ -195,8 +195,18 @@ update msg model =
 
         ArchiveCall call ->
             ( { model
-                | calls = List.filter (\fCall -> fCall /= call) model.calls
-                , archivedCalls = call :: model.archivedCalls
+                | calls =
+                    if List.member call model.calls then
+                        List.filter (\fCall -> fCall /= call) model.calls
+
+                    else
+                        call :: model.calls
+                , archivedCalls =
+                    if not (List.member call model.archivedCalls) then
+                        call :: model.archivedCalls
+
+                    else
+                        List.filter (\fCall -> fCall /= call) model.archivedCalls
               }
             , Cmd.none
             )
@@ -311,32 +321,34 @@ view model =
                 , icon = Material.Icons.Content.add |> Icon.materialIcons
                 , onPress = Just AddCall
                 }
-            , Ui.column [] <| viewCalls model
-
-            -- , Ui.column [] <| viewArchivedCalls model
+            , Ui.column [] <| viewCalls model.calls model.subTasks model.timeZone
+            , Ui.el [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 } ] (Ui.text "Archief")
+            , Ui.column [] <| viewCalls model.archivedCalls model.subTasks model.timeZone
             ]
         )
 
 
-viewCalls : Model -> List (Ui.Element Msg)
-viewCalls model =
+viewCalls : List Call -> List SubTask -> Time.Zone -> List (Ui.Element Msg)
+viewCalls calls subtasks timeZone =
     List.map
         (\call ->
             Ui.row [ Ui.paddingXY 0 16 ]
-                [ Ui.el [ Ui.width (Ui.px 32), Ui.alignTop ] (Icon.materialIcons Material.Icons.Toggle.radio_button_unchecked { size = 24, color = Color.lightGray })
+                [ -- The little ball to click
+                  Ui.el [ Ui.width (Ui.px 32), Ui.alignTop, Element.Events.onClick (ArchiveCall call) ]
+                    (Icon.materialIcons Material.Icons.Toggle.radio_button_unchecked { size = 24, color = Color.lightGray })
                 , Ui.column []
                     ([ Ui.column []
                         [ Ui.el [ Font.bold ] (Ui.text call.who)
-                        , Ui.el [ Font.italic ] (Ui.text (dateToHumanStr model.timeZone call.when))
+                        , Ui.el [ Font.italic ] (Ui.text (dateToHumanStr timeZone call.when))
                         , Ui.el [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 } ] (Ui.text call.comments)
                         , Ui.el [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 } ] (Ui.text "Taken")
                         ]
                      ]
-                        ++ viewSubTasks call model.subTasks
+                        ++ viewSubTasks call subtasks
                     )
                 ]
         )
-        model.calls
+        calls
 
 
 
