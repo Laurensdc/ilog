@@ -12,6 +12,7 @@ import Html.Events
 import Json.Decode
 import Material.Icons.Action
 import Material.Icons.Content
+import Material.Icons.Toggle
 import Svg
 import Task
 import Time
@@ -44,7 +45,8 @@ type alias Model =
     , inputComments : String
     , inputSubTask : String
     , calls : List Call
-    , tempSubTasks : List SubTask
+    , subTasks : List SubTask
+    , preSaveSubTasks : List SubTask
     , timeZone : Time.Zone
     }
 
@@ -55,18 +57,24 @@ init _ =
       , inputComments = ""
       , inputSubTask = ""
       , calls =
-            [ { who = "Jan van Carrefour"
+            [ { id = FromBackend 1
+              , who = "Jan van Carrefour"
               , comments = "Nog bellen naar labo enal, kwenie"
-              , when = Time.millisToPosix 1613981969763
-              , subTasks = [ { text = "Bel labo", done = False }, { text = "Check die stock", done = False } ]
+              , when = Time.millisToPosix 1613870869763
               }
-            , { who = "Eva / Beyond Meat"
+            , { id = FromBackend 2
+              , who = "Eva / Beyond Meat"
               , comments = "Wa een tang"
               , when = Time.millisToPosix 1613981973556
-              , subTasks = [ { text = "Bel Cissy", done = False }, { text = "Dingske mailen met vraag", done = False } ]
               }
             ]
-      , tempSubTasks = []
+      , subTasks =
+            [ { callId = FromBackend 1, text = "Bel labo", done = False }
+            , { callId = FromBackend 1, text = "Check die stock", done = False }
+            , { callId = FromBackend 2, text = "Bel Cissy", done = False }
+            , { callId = FromBackend 2, text = "Dingske mailen met vraag", done = False }
+            ]
+      , preSaveSubTasks = []
       , timeZone = Time.utc
       }
     , Task.perform GetTimeZone Time.here
@@ -74,15 +82,20 @@ init _ =
 
 
 type alias Call =
-    { who : String
+    { id : CallId
+    , who : String
     , comments : String
     , when : Time.Posix
-    , subTasks : List SubTask
     }
 
 
 type alias SubTask =
-    { text : String, done : Bool }
+    { callId : CallId, text : String, done : Bool }
+
+
+type CallId
+    = Creating
+    | FromBackend Int
 
 
 
@@ -93,11 +106,12 @@ type Msg
     = InputWhoChanged String
     | InputCommentsChanged String
     | InputSubTaskChanged String
-    | AddTempSubTask
+    | AddPreSaveSubTask
     | AddCall
     | AddCallWithTime Time.Posix
-    | DeleteTempSubTask SubTask
+    | DeletePreSaveSubTask SubTask
     | GetTimeZone Time.Zone
+    | CheckSubTask SubTask
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -112,13 +126,13 @@ update msg model =
         InputSubTaskChanged text ->
             ( { model | inputSubTask = text }, Cmd.none )
 
-        AddTempSubTask ->
+        AddPreSaveSubTask ->
             if model.inputSubTask == "" then
                 ( model, Cmd.none )
 
             else
                 ( { model
-                    | tempSubTasks = model.tempSubTasks ++ [ { text = model.inputSubTask, done = False } ]
+                    | preSaveSubTasks = model.preSaveSubTasks ++ [ { callId = Creating, text = model.inputSubTask, done = False } ]
                     , inputSubTask = ""
                   }
                 , Cmd.none
@@ -128,31 +142,76 @@ update msg model =
             ( model, Task.perform AddCallWithTime Time.now )
 
         AddCallWithTime time ->
+            let
+                newCallId =
+                    createNewCallId model
+            in
             ( { model
                 | calls =
                     model.calls
-                        ++ [ { who = model.inputWho
+                        ++ [ { -- TODO -> actually from backend
+                               id = newCallId
+                             , who = model.inputWho
                              , comments = model.inputComments
-                             , subTasks = model.tempSubTasks
                              , when = time
                              }
                            ]
-                , tempSubTasks = []
+                , subTasks = List.map (\subTask -> { subTask | callId = newCallId }) model.preSaveSubTasks
+                , preSaveSubTasks = []
                 , inputWho = ""
                 , inputComments = ""
               }
             , Cmd.none
             )
 
-        DeleteTempSubTask subtask ->
+        DeletePreSaveSubTask subtask ->
             ( { model
-                | tempSubTasks = List.filter (\s -> s /= subtask) model.tempSubTasks
+                | preSaveSubTasks = List.filter (\s -> s /= subtask) model.preSaveSubTasks
               }
             , Cmd.none
             )
 
         GetTimeZone newZone ->
             ( { model | timeZone = newZone }, Cmd.none )
+
+        CheckSubTask subTask ->
+            ( { model | calls = toggleSubTask model.calls subTask }, Cmd.none )
+
+
+{-| Checks calls for highest value of id.
+
+Returns a new highest id.
+
+-}
+createNewCallId : Model -> CallId
+createNewCallId model =
+    let
+        max =
+            List.maximum
+                (List.map
+                    (\call ->
+                        case call.id of
+                            Creating ->
+                                -1
+
+                            FromBackend callid ->
+                                callid
+                    )
+                    model.calls
+                )
+    in
+    case max of
+        Nothing ->
+            Creating
+
+        Just x ->
+            FromBackend (x + 1)
+
+
+toggleSubTask : List Call -> SubTask -> List Call
+toggleSubTask calls subTask =
+    -- TODO
+    calls
 
 
 
@@ -205,9 +264,9 @@ view model =
             , Ui.row [ Ui.width (Ui.shrink |> Ui.minimum 200) ]
                 [ Input.text
                     [ Font.color <| color TextInverted
-                    , onEnter AddTempSubTask
+                    , onEnter AddPreSaveSubTask
                     , Ui.htmlAttribute
-                        (Html.Events.onBlur AddTempSubTask)
+                        (Html.Events.onBlur AddPreSaveSubTask)
                     ]
                     { onChange = InputSubTaskChanged
                     , text = model.inputSubTask
@@ -221,7 +280,7 @@ view model =
                 --     , onPress = Just AddTempSubTask
                 --     }
                 ]
-            , Ui.column [] <| viewSubTasks model
+            , Ui.column [] <| viewPreSaveSubTasks model
             , Widget.button (Widget.Material.containedButton Widget.Material.darkPalette)
                 { text = "Gesprek opslaan"
                 , icon = Material.Icons.Content.add |> Icon.materialIcons
@@ -234,25 +293,58 @@ view model =
 
 viewCalls : Model -> List (Ui.Element Msg)
 viewCalls model =
-    List.map viewCall model.calls
+    List.map
+        (\call ->
+            let
+                subtasks =
+                    List.filter
+                        (\subTask ->
+                            if subTask.callId == call.id then
+                                True
 
+                            else
+                                False
+                        )
+                        model.subTasks
 
-viewCall : Call -> Ui.Element Msg
-viewCall call =
-    let
-        subtasks =
-            List.map (\subtask -> Ui.text subtask.text) call.subTasks
-    in
-    Ui.column [ Ui.paddingXY 0 16 ]
-        ([ Ui.column []
-            [ Ui.el [ Font.bold ] (Ui.text call.who)
-            , Ui.el [ Font.italic ] (Ui.text (dateToHumanStr Time.utc call.when))
-            , Ui.text call.comments
-            , Ui.text "Taken"
-            ]
-         ]
-            ++ subtasks
+                viewSubTasks =
+                    List.map
+                        (\subTask ->
+                            Ui.row
+                                [ Element.Events.onClick (CheckSubTask subTask)
+                                ]
+                                [ Ui.el [] (Icon.materialIcons Material.Icons.Toggle.check_box_outline_blank { size = 24, color = Color.lightGray })
+                                , Ui.text subTask.text
+                                ]
+                        )
+                        subtasks
+            in
+            Ui.column [ Ui.paddingXY 0 16 ]
+                ([ Ui.column []
+                    [ Ui.el [ Font.bold ] (Ui.text call.who)
+                    , Ui.el [ Font.italic ] (Ui.text (dateToHumanStr model.timeZone call.when))
+                    , Ui.text call.comments
+                    , Ui.text "Taken"
+                    ]
+                 ]
+                    ++ viewSubTasks
+                )
         )
+        model.calls
+
+
+{-| Subtasks before they are submitted
+-}
+viewPreSaveSubTasks : Model -> List (Ui.Element Msg)
+viewPreSaveSubTasks model =
+    List.map
+        (\subTask ->
+            Ui.row []
+                [ Ui.el [ Ui.paddingEach { top = 0, right = 16, bottom = 0, left = 0 } ] (Ui.text subTask.text)
+                , Ui.el [ Element.Events.onClick (DeletePreSaveSubTask subTask) ] (Icon.materialIcons Material.Icons.Action.delete { size = 24, color = Color.lightRed })
+                ]
+        )
+        model.preSaveSubTasks
 
 
 dateToHumanStr : Time.Zone -> Time.Posix -> String
@@ -372,25 +464,6 @@ toDutchWeekday day =
 
         Time.Sun ->
             "Zondag"
-
-
-viewSubTasks : Model -> List (Ui.Element Msg)
-viewSubTasks model =
-    List.map viewSubTask model.tempSubTasks
-
-
-viewSubTask : SubTask -> Ui.Element Msg
-viewSubTask subTask =
-    Ui.row []
-        [ Ui.el [ Ui.paddingEach { top = 0, right = 16, bottom = 0, left = 0 } ] (Ui.text subTask.text)
-
-        -- , Widget.iconButton (Widget.Material.containedButton Widget.Material.darkPalette)
-        --     { icon = Icon.materialIcons Material.Icons.Action.delete
-        --     , text = "Delete task"
-        --     , onPress = Just (DeleteTempSubTask subTask)
-        --     }
-        , Ui.el [ Element.Events.onClick (DeleteTempSubTask subTask) ] (Icon.materialIcons Material.Icons.Action.delete { size = 24, color = Color.lightRed })
-        ]
 
 
 

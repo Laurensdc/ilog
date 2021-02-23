@@ -10596,6 +10596,9 @@ var $elm$core$Basics$never = function (_v0) {
 	}
 };
 var $elm$browser$Browser$element = _Browser_element;
+var $author$project$Main$FromBackend = function (a) {
+	return {$: 'FromBackend', a: a};
+};
 var $author$project$Main$GetTimeZone = function (a) {
 	return {$: 'GetTimeZone', a: a};
 };
@@ -10623,21 +10626,13 @@ var $author$project$Main$init = function (_v0) {
 				[
 					{
 					comments: 'Nog bellen naar labo enal, kwenie',
-					subTasks: _List_fromArray(
-						[
-							{done: false, text: 'Bel labo'},
-							{done: false, text: 'Check die stock'}
-						]),
+					id: $author$project$Main$FromBackend(1),
 					when: $elm$time$Time$millisToPosix(1613870869763),
 					who: 'Jan van Carrefour'
 				},
 					{
 					comments: 'Wa een tang',
-					subTasks: _List_fromArray(
-						[
-							{done: false, text: 'Bel Cissy'},
-							{done: false, text: 'Dingske mailen met vraag'}
-						]),
+					id: $author$project$Main$FromBackend(2),
 					when: $elm$time$Time$millisToPosix(1613981973556),
 					who: 'Eva / Beyond Meat'
 				}
@@ -10645,7 +10640,30 @@ var $author$project$Main$init = function (_v0) {
 			inputComments: '',
 			inputSubTask: '',
 			inputWho: '',
-			tempSubTasks: _List_Nil,
+			preSaveSubTasks: _List_Nil,
+			subTasks: _List_fromArray(
+				[
+					{
+					callId: $author$project$Main$FromBackend(1),
+					done: false,
+					text: 'Bel labo'
+				},
+					{
+					callId: $author$project$Main$FromBackend(1),
+					done: false,
+					text: 'Check die stock'
+				},
+					{
+					callId: $author$project$Main$FromBackend(2),
+					done: false,
+					text: 'Bel Cissy'
+				},
+					{
+					callId: $author$project$Main$FromBackend(2),
+					done: false,
+					text: 'Dingske mailen met vraag'
+				}
+				]),
 			timeZone: $elm$time$Time$utc
 		},
 		A2($elm$core$Task$perform, $author$project$Main$GetTimeZone, $elm$time$Time$here));
@@ -10657,6 +10675,38 @@ var $author$project$Main$subscriptions = function (_v0) {
 };
 var $author$project$Main$AddCallWithTime = function (a) {
 	return {$: 'AddCallWithTime', a: a};
+};
+var $author$project$Main$Creating = {$: 'Creating'};
+var $elm$core$List$maximum = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return $elm$core$Maybe$Just(
+			A3($elm$core$List$foldl, $elm$core$Basics$max, x, xs));
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
+var $author$project$Main$createNewCallId = function (model) {
+	var max = $elm$core$List$maximum(
+		A2(
+			$elm$core$List$map,
+			function (call) {
+				var _v1 = call.id;
+				if (_v1.$ === 'Creating') {
+					return -1;
+				} else {
+					var callid = _v1.a;
+					return callid;
+				}
+			},
+			model.calls));
+	if (max.$ === 'Nothing') {
+		return $author$project$Main$Creating;
+	} else {
+		var x = max.a;
+		return $author$project$Main$FromBackend(x + 1);
+	}
 };
 var $elm$core$List$filter = F2(
 	function (isGood, list) {
@@ -10698,17 +10748,17 @@ var $author$project$Main$update = F2(
 						model,
 						{inputSubTask: text}),
 					$elm$core$Platform$Cmd$none);
-			case 'AddTempSubTask':
+			case 'AddPreSaveSubTask':
 				return (model.inputSubTask === '') ? _Utils_Tuple2(model, $elm$core$Platform$Cmd$none) : _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
 							inputSubTask: '',
-							tempSubTasks: _Utils_ap(
-								model.tempSubTasks,
+							preSaveSubTasks: _Utils_ap(
+								model.preSaveSubTasks,
 								_List_fromArray(
 									[
-										{done: false, text: model.inputSubTask}
+										{callId: $author$project$Main$Creating, done: false, text: model.inputSubTask}
 									]))
 						}),
 					$elm$core$Platform$Cmd$none);
@@ -10718,6 +10768,7 @@ var $author$project$Main$update = F2(
 					A2($elm$core$Task$perform, $author$project$Main$AddCallWithTime, $elm$time$Time$now));
 			case 'AddCallWithTime':
 				var time = msg.a;
+				var newCallId = $author$project$Main$createNewCallId(model);
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -10726,25 +10777,33 @@ var $author$project$Main$update = F2(
 								model.calls,
 								_List_fromArray(
 									[
-										{comments: model.inputComments, subTasks: model.tempSubTasks, when: time, who: model.inputWho}
+										{comments: model.inputComments, id: newCallId, when: time, who: model.inputWho}
 									])),
 							inputComments: '',
 							inputWho: '',
-							tempSubTasks: _List_Nil
+							preSaveSubTasks: _List_Nil,
+							subTasks: A2(
+								$elm$core$List$map,
+								function (subTask) {
+									return _Utils_update(
+										subTask,
+										{callId: newCallId});
+								},
+								model.preSaveSubTasks)
 						}),
 					$elm$core$Platform$Cmd$none);
-			case 'DeleteTempSubTask':
+			case 'DeletePreSaveSubTask':
 				var subtask = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
-							tempSubTasks: A2(
+							preSaveSubTasks: A2(
 								$elm$core$List$filter,
 								function (s) {
 									return !_Utils_eq(s, subtask);
 								},
-								model.tempSubTasks)
+								model.preSaveSubTasks)
 						}),
 					$elm$core$Platform$Cmd$none);
 			case 'GetTimeZone':
@@ -10766,7 +10825,7 @@ var $author$project$Main$update = F2(
 		}
 	});
 var $author$project$Main$AddCall = {$: 'AddCall'};
-var $author$project$Main$AddTempSubTask = {$: 'AddTempSubTask'};
+var $author$project$Main$AddPreSaveSubTask = {$: 'AddPreSaveSubTask'};
 var $author$project$Main$Bg = {$: 'Bg'};
 var $author$project$Main$InputCommentsChanged = function (a) {
 	return {$: 'InputCommentsChanged', a: a};
@@ -14137,16 +14196,6 @@ var $mdgriffith$elm_ui$Internal$Model$adjust = F3(
 	function (size, height, vertical) {
 		return {height: height / size, size: size, vertical: vertical};
 	});
-var $elm$core$List$maximum = function (list) {
-	if (list.b) {
-		var x = list.a;
-		var xs = list.b;
-		return $elm$core$Maybe$Just(
-			A3($elm$core$List$foldl, $elm$core$Basics$max, x, xs));
-	} else {
-		return $elm$core$Maybe$Nothing;
-	}
-};
 var $elm$core$List$minimum = function (list) {
 	if (list.b) {
 		var x = list.a;
@@ -18568,6 +18617,12 @@ var $author$project$Main$viewCalls = function (model) {
 		$elm$core$List$map,
 		function (call) {
 			var subtasks = A2(
+				$elm$core$List$filter,
+				function (subTask) {
+					return _Utils_eq(subTask.callId, call.id) ? true : false;
+				},
+				model.subTasks);
+			var viewSubTasks = A2(
 				$elm$core$List$map,
 				function (subTask) {
 					return A2(
@@ -18589,7 +18644,7 @@ var $author$project$Main$viewCalls = function (model) {
 								$mdgriffith$elm_ui$Element$text(subTask.text)
 							]));
 				},
-				call.subTasks);
+				subtasks);
 			return A2(
 				$mdgriffith$elm_ui$Element$column,
 				_List_fromArray(
@@ -18619,12 +18674,12 @@ var $author$project$Main$viewCalls = function (model) {
 									$mdgriffith$elm_ui$Element$text('Taken')
 								]))
 						]),
-					subtasks));
+					viewSubTasks));
 		},
 		model.calls);
 };
-var $author$project$Main$DeleteTempSubTask = function (a) {
-	return {$: 'DeleteTempSubTask', a: a};
+var $author$project$Main$DeletePreSaveSubTask = function (a) {
+	return {$: 'DeletePreSaveSubTask', a: a};
 };
 var $danmarcab$material_icons$Material$Icons$Action$delete = A2(
 	$danmarcab$material_icons$Material$Icons$Internal$icon,
@@ -18640,7 +18695,7 @@ var $danmarcab$material_icons$Material$Icons$Action$delete = A2(
 			_List_Nil)
 		]));
 var $avh4$elm_color$Color$lightRed = A4($avh4$elm_color$Color$RgbaSpace, 239 / 255, 41 / 255, 41 / 255, 1.0);
-var $author$project$Main$viewTempSubTasks = function (model) {
+var $author$project$Main$viewPreSaveSubTasks = function (model) {
 	return A2(
 		$elm$core$List$map,
 		function (subTask) {
@@ -18662,7 +18717,7 @@ var $author$project$Main$viewTempSubTasks = function (model) {
 						_List_fromArray(
 							[
 								$mdgriffith$elm_ui$Element$Events$onClick(
-								$author$project$Main$DeleteTempSubTask(subTask))
+								$author$project$Main$DeletePreSaveSubTask(subTask))
 							]),
 						A2(
 							$Orasund$elm_ui_widgets$Widget$Icon$materialIcons,
@@ -18670,7 +18725,7 @@ var $author$project$Main$viewTempSubTasks = function (model) {
 							{color: $avh4$elm_color$Color$lightRed, size: 24}))
 					]));
 		},
-		model.tempSubTasks);
+		model.preSaveSubTasks);
 };
 var $author$project$Main$view = function (model) {
 	return A2(
@@ -18767,9 +18822,9 @@ var $author$project$Main$view = function (model) {
 								[
 									$mdgriffith$elm_ui$Element$Font$color(
 									$author$project$Main$color($author$project$Main$TextInverted)),
-									$author$project$Main$onEnter($author$project$Main$AddTempSubTask),
+									$author$project$Main$onEnter($author$project$Main$AddPreSaveSubTask),
 									$mdgriffith$elm_ui$Element$htmlAttribute(
-									$elm$html$Html$Events$onBlur($author$project$Main$AddTempSubTask))
+									$elm$html$Html$Events$onBlur($author$project$Main$AddPreSaveSubTask))
 								]),
 							{
 								label: A2(
@@ -18784,7 +18839,7 @@ var $author$project$Main$view = function (model) {
 					A2(
 					$mdgriffith$elm_ui$Element$column,
 					_List_Nil,
-					$author$project$Main$viewTempSubTasks(model)),
+					$author$project$Main$viewPreSaveSubTasks(model)),
 					A2(
 					$Orasund$elm_ui_widgets$Widget$button,
 					$Orasund$elm_ui_widgets$Widget$Material$containedButton($Orasund$elm_ui_widgets$Widget$Material$darkPalette),
@@ -18802,7 +18857,7 @@ var $author$project$Main$view = function (model) {
 var $author$project$Main$main = $elm$browser$Browser$element(
 	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$view});
 _Platform_export({'Main':{'init':$author$project$Main$main(
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.SubTask":{"args":[],"type":"{ text : String.String, done : Basics.Bool }"},"Time.Era":{"args":[],"type":"{ start : Basics.Int, offset : Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"InputWhoChanged":["String.String"],"InputCommentsChanged":["String.String"],"InputSubTaskChanged":["String.String"],"AddTempSubTask":[],"AddCall":[],"AddCallWithTime":["Time.Posix"],"DeleteTempSubTask":["Main.SubTask"],"GetTimeZone":["Time.Zone"],"CheckSubTask":["Main.SubTask"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"String.String":{"args":[],"tags":{"String":[]}},"Time.Zone":{"args":[],"tags":{"Zone":["Basics.Int","List.List Time.Era"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}}}}})}});}(this));
+	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.SubTask":{"args":[],"type":"{ callId : Main.CallId, text : String.String, done : Basics.Bool }"},"Time.Era":{"args":[],"type":"{ start : Basics.Int, offset : Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"InputWhoChanged":["String.String"],"InputCommentsChanged":["String.String"],"InputSubTaskChanged":["String.String"],"AddPreSaveSubTask":[],"AddCall":[],"AddCallWithTime":["Time.Posix"],"DeletePreSaveSubTask":["Main.SubTask"],"GetTimeZone":["Time.Zone"],"CheckSubTask":["Main.SubTask"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Main.CallId":{"args":[],"tags":{"Creating":[],"FromBackend":["Basics.Int"]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"String.String":{"args":[],"tags":{"String":[]}},"Time.Zone":{"args":[],"tags":{"Zone":["Basics.Int","List.List Time.Era"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}}}}})}});}(this));
 
   var app = Elm.Main.init({ node: document.getElementById("elm") });
 }
