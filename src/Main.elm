@@ -13,7 +13,6 @@ import Json.Decode
 import Material.Icons.Action
 import Material.Icons.Content
 import Material.Icons.Toggle
-import Svg
 import Task
 import Time
 import Widget
@@ -44,8 +43,10 @@ type alias Model =
     { inputWho : String
     , inputComments : String
     , inputSubTask : String
+    , inputSearch : String
     , calls : List Call
     , archivedCalls : List Call
+    , searchResults : List Call
     , subTasks : List SubTask
     , preSaveSubTasks : List SubTask
     , timeZone : Time.Zone
@@ -57,6 +58,7 @@ init _ =
     ( { inputWho = ""
       , inputComments = ""
       , inputSubTask = ""
+      , inputSearch = ""
       , calls =
             [ { id = FromBackend 1
               , who = "Jan van Carrefour"
@@ -77,6 +79,7 @@ init _ =
             ]
       , archivedCalls = []
       , preSaveSubTasks = []
+      , searchResults = []
       , timeZone = Time.utc
       }
     , Task.perform GetTimeZone Time.here
@@ -108,6 +111,7 @@ type Msg
     = InputWhoChanged String
     | InputCommentsChanged String
     | InputSubTaskChanged String
+    | InputSearchChanged String
     | AddPreSaveSubTask
     | AddCall
     | AddCallWithTime Time.Posix
@@ -128,6 +132,9 @@ update msg model =
 
         InputSubTaskChanged text ->
             ( { model | inputSubTask = text }, Cmd.none )
+
+        InputSearchChanged text ->
+            ( { model | inputSearch = text }, Cmd.none )
 
         AddPreSaveSubTask ->
             if model.inputSubTask == "" then
@@ -269,8 +276,23 @@ view model =
             , Ui.centerX
             , Ui.spacing 16
             ]
-            [ -- Title
-              Ui.el [ Font.size 24 ]
+            [ --  Search
+              Ui.row [ Ui.width Ui.fill ]
+                [ Ui.el [ Ui.alignRight ] (Icon.materialIcons Material.Icons.Action.search { size = 40, color = Color.lightGray })
+                , Input.text
+                    [ Font.color <| color TextInverted
+                    , Ui.width (Ui.px 320)
+                    , Ui.alignRight
+                    ]
+                    { onChange = InputSearchChanged
+                    , text = model.inputSearch
+                    , placeholder = Just (Input.placeholder [] (Ui.text "Zoeken: Klant, datum, commentaar, ..."))
+                    , label = Input.labelHidden "Zoeken"
+                    }
+                ]
+
+            -- Title
+            , Ui.el [ Font.size 24 ]
                 (Ui.text "Voeg een gesprek toe")
             , --  Client
               Input.text
@@ -317,30 +339,101 @@ view model =
                 }
 
             -- Calls
-            , Ui.el
+            , if model.inputSearch == "" then
+                viewUnarchivedCalls model
+
+              else
+                Ui.none
+            , if model.inputSearch == "" then
+                viewArchivedCalls model
+
+              else
+                Ui.none
+            , if model.inputSearch /= "" then
+                viewSearchCalls model
+
+              else
+                Ui.none
+            ]
+        )
+
+
+viewSearchCalls : Model -> Ui.Element Msg
+viewSearchCalls model =
+    let
+        search =
+            String.toLower model.inputSearch
+
+        filterer : Call -> Bool
+        filterer =
+            \call ->
+                if
+                    String.contains search (call.who |> String.toLower)
+                        || String.contains search (dateToHumanStr model.timeZone call.when |> String.toLower)
+                        || String.contains search (call.comments |> String.toLower)
+                then
+                    True
+
+                else
+                    False
+
+        foundCalls =
+            List.filter filterer model.calls
+
+        foundArchivedCalls =
+            List.filter filterer model.archivedCalls
+    in
+    if List.length foundCalls > 0 || List.length foundArchivedCalls > 0 then
+        Ui.column []
+            [ Ui.el
+                [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 }
+                , Font.size 24
+                , Font.bold
+                ]
+                (Ui.text "Zoekresultaten")
+            , Ui.column [] <| viewCalls foundCalls model.subTasks model.timeZone { archived = False }
+            , Ui.column [] <| viewCalls foundArchivedCalls model.subTasks model.timeZone { archived = True }
+            ]
+
+    else
+        Ui.none
+
+
+viewUnarchivedCalls : Model -> Ui.Element Msg
+viewUnarchivedCalls model =
+    if List.length model.calls > 0 then
+        Ui.column []
+            [ Ui.el
                 [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 }
                 , Font.size 24
                 , Font.bold
                 ]
                 (Ui.text "Gesprekken / todo's")
             , Ui.column [] <| viewCalls model.calls model.subTasks model.timeZone { archived = False }
+            ]
 
-            -- Archive
-            , if List.length model.archivedCalls > 0 then
-                Ui.el
-                    [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 }
-                    , Font.size 24
-                    , Font.bold
-                    ]
-                    (Ui.text
-                        "Archief"
-                    )
+    else
+        Ui.none
 
-              else
-                Ui.none
+
+viewArchivedCalls : Model -> Ui.Element Msg
+viewArchivedCalls model =
+    -- Archive
+    if List.length model.archivedCalls > 0 then
+        Ui.column []
+            [ Ui.el
+                [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 }
+                , Font.size 24
+                , Font.bold
+                ]
+                (Ui.text
+                    "Archief"
+                )
             , Ui.column [] <| viewCalls model.archivedCalls model.subTasks model.timeZone { archived = True }
             ]
-        )
+
+    else
+        Ui.none
 
 
 viewCalls : List Call -> List SubTask -> Time.Zone -> { archived : Bool } -> List (Ui.Element Msg)
@@ -376,28 +469,6 @@ viewCalls calls subtasks timeZone options =
                 ]
         )
         calls
-
-
-
--- viewArchivedCalls : Model -> List (Ui.Element Msg)
--- viewArchivedCalls model =
---     List.map
---         (\call ->
---             Ui.row [ Ui.paddingXY 0 16 ]
---                 [ Ui.el [ Ui.width (Ui.px 32), Ui.alignTop ] (Icon.materialIcons Material.Icons.Toggle.radio_button_unchecked { size = 24, color = Color.lightGray })
---                 , Ui.column []
---                     ([ Ui.column []
---                         [ Ui.el [ Font.bold ] (Ui.text call.who)
---                         , Ui.el [ Font.italic ] (Ui.text (dateToHumanStr model.timeZone call.when))
---                         , Ui.el [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 } ] (Ui.text call.comments)
---                         , Ui.el [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 } ] (Ui.text "Taken")
---                         ]
---                      ]
---                         ++ viewSubTasks call model.subTasks
---                     )
---                 ]
---         )
---         model.archivedCalls
 
 
 viewSubTasks : Call -> List SubTask -> List (Ui.Element Msg)
