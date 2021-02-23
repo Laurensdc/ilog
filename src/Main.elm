@@ -327,31 +327,31 @@ viewCalls model =
                             Ui.row
                                 [ Element.Events.onClick (ToggleSubTask subTask)
                                 ]
-                                [ Ui.el []
-                                    (Icon.materialIcons
-                                        (if subTask.done then
-                                            Material.Icons.Toggle.check_box
+                                [ Ui.el [ Ui.paddingEach { top = 0, left = 0, right = 4, bottom = 0 } ]
+                                    (if subTask.done then
+                                        Icon.materialIcons Material.Icons.Toggle.check_box { size = 24, color = Color.lightGreen }
 
-                                         else
-                                            Material.Icons.Toggle.check_box_outline_blank
-                                        )
-                                        { size = 24, color = Color.lightGray }
+                                     else
+                                        Icon.materialIcons Material.Icons.Toggle.check_box_outline_blank { size = 24, color = Color.lightGray }
                                     )
                                 , Ui.text subTask.text
                                 ]
                         )
                         subtasks
             in
-            Ui.column [ Ui.paddingXY 0 16 ]
-                ([ Ui.column []
-                    [ Ui.el [ Font.bold ] (Ui.text call.who)
-                    , Ui.el [ Font.italic ] (Ui.text (dateToHumanStr model.timeZone call.when))
-                    , Ui.text call.comments
-                    , Ui.text "Taken"
-                    ]
-                 ]
-                    ++ viewSubTasks
-                )
+            Ui.row [ Ui.paddingXY 0 16 ]
+                [ Ui.el [ Ui.width (Ui.px 32), Ui.alignTop ] (Icon.materialIcons Material.Icons.Toggle.radio_button_unchecked { size = 24, color = Color.lightGray })
+                , Ui.column []
+                    ([ Ui.column []
+                        [ Ui.el [ Font.bold ] (Ui.text call.who)
+                        , Ui.el [ Font.italic ] (Ui.text (dateToHumanStr model.timeZone call.when))
+                        , Ui.el [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 } ] (Ui.text call.comments)
+                        , Ui.el [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 } ] (Ui.text "Taken")
+                        ]
+                     ]
+                        ++ viewSubTasks
+                    )
+                ]
         )
         model.calls
 

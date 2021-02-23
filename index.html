@@ -18405,6 +18405,8 @@ var $mdgriffith$elm_ui$Element$Input$text = $mdgriffith$elm_ui$Element$Input$tex
 var $author$project$Main$ToggleSubTask = function (a) {
 	return {$: 'ToggleSubTask', a: a};
 };
+var $mdgriffith$elm_ui$Internal$Model$Top = {$: 'Top'};
+var $mdgriffith$elm_ui$Element$alignTop = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$Top);
 var $mdgriffith$elm_ui$Element$Font$bold = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$fontWeight, $mdgriffith$elm_ui$Internal$Style$classes.bold);
 var $danmarcab$material_icons$Material$Icons$Toggle$check_box = A2(
 	$danmarcab$material_icons$Material$Icons$Internal$icon,
@@ -18631,6 +18633,20 @@ var $author$project$Main$dateToHumanStr = F2(
 	});
 var $mdgriffith$elm_ui$Element$Font$italic = $mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.italic);
 var $avh4$elm_color$Color$lightGray = A4($avh4$elm_color$Color$RgbaSpace, 238 / 255, 238 / 255, 236 / 255, 1.0);
+var $avh4$elm_color$Color$lightGreen = A4($avh4$elm_color$Color$RgbaSpace, 138 / 255, 226 / 255, 52 / 255, 1.0);
+var $danmarcab$material_icons$Material$Icons$Toggle$radio_button_unchecked = A2(
+	$danmarcab$material_icons$Material$Icons$Internal$icon,
+	'0 0 48 48',
+	_List_fromArray(
+		[
+			A2(
+			$elm$svg$Svg$path,
+			_List_fromArray(
+				[
+					$elm$svg$Svg$Attributes$d('M24 4C12.95 4 4 12.95 4 24s8.95 20 20 20 20-8.95 20-20S35.05 4 24 4zm0 36c-8.84 0-16-7.16-16-16S15.16 8 24 8s16 7.16 16 16-7.16 16-16 16z')
+				]),
+			_List_Nil)
+		]));
 var $author$project$Main$viewCalls = function (model) {
 	return A2(
 		$elm$core$List$map,
@@ -18655,45 +18671,84 @@ var $author$project$Main$viewCalls = function (model) {
 							[
 								A2(
 								$mdgriffith$elm_ui$Element$el,
-								_List_Nil,
-								A2(
+								_List_fromArray(
+									[
+										$mdgriffith$elm_ui$Element$paddingEach(
+										{bottom: 0, left: 0, right: 4, top: 0})
+									]),
+								subTask.done ? A2(
 									$Orasund$elm_ui_widgets$Widget$Icon$materialIcons,
-									subTask.done ? $danmarcab$material_icons$Material$Icons$Toggle$check_box : $danmarcab$material_icons$Material$Icons$Toggle$check_box_outline_blank,
+									$danmarcab$material_icons$Material$Icons$Toggle$check_box,
+									{color: $avh4$elm_color$Color$lightGreen, size: 24}) : A2(
+									$Orasund$elm_ui_widgets$Widget$Icon$materialIcons,
+									$danmarcab$material_icons$Material$Icons$Toggle$check_box_outline_blank,
 									{color: $avh4$elm_color$Color$lightGray, size: 24})),
 								$mdgriffith$elm_ui$Element$text(subTask.text)
 							]));
 				},
 				subtasks);
 			return A2(
-				$mdgriffith$elm_ui$Element$column,
+				$mdgriffith$elm_ui$Element$row,
 				_List_fromArray(
 					[
 						A2($mdgriffith$elm_ui$Element$paddingXY, 0, 16)
 					]),
-				_Utils_ap(
-					_List_fromArray(
-						[
-							A2(
-							$mdgriffith$elm_ui$Element$column,
-							_List_Nil,
+				_List_fromArray(
+					[
+						A2(
+						$mdgriffith$elm_ui$Element$el,
+						_List_fromArray(
+							[
+								$mdgriffith$elm_ui$Element$width(
+								$mdgriffith$elm_ui$Element$px(32)),
+								$mdgriffith$elm_ui$Element$alignTop
+							]),
+						A2(
+							$Orasund$elm_ui_widgets$Widget$Icon$materialIcons,
+							$danmarcab$material_icons$Material$Icons$Toggle$radio_button_unchecked,
+							{color: $avh4$elm_color$Color$lightGray, size: 24})),
+						A2(
+						$mdgriffith$elm_ui$Element$column,
+						_List_Nil,
+						_Utils_ap(
 							_List_fromArray(
 								[
 									A2(
-									$mdgriffith$elm_ui$Element$el,
+									$mdgriffith$elm_ui$Element$column,
+									_List_Nil,
 									_List_fromArray(
-										[$mdgriffith$elm_ui$Element$Font$bold]),
-									$mdgriffith$elm_ui$Element$text(call.who)),
-									A2(
-									$mdgriffith$elm_ui$Element$el,
-									_List_fromArray(
-										[$mdgriffith$elm_ui$Element$Font$italic]),
-									$mdgriffith$elm_ui$Element$text(
-										A2($author$project$Main$dateToHumanStr, model.timeZone, call.when))),
-									$mdgriffith$elm_ui$Element$text(call.comments),
-									$mdgriffith$elm_ui$Element$text('Taken')
-								]))
-						]),
-					viewSubTasks));
+										[
+											A2(
+											$mdgriffith$elm_ui$Element$el,
+											_List_fromArray(
+												[$mdgriffith$elm_ui$Element$Font$bold]),
+											$mdgriffith$elm_ui$Element$text(call.who)),
+											A2(
+											$mdgriffith$elm_ui$Element$el,
+											_List_fromArray(
+												[$mdgriffith$elm_ui$Element$Font$italic]),
+											$mdgriffith$elm_ui$Element$text(
+												A2($author$project$Main$dateToHumanStr, model.timeZone, call.when))),
+											A2(
+											$mdgriffith$elm_ui$Element$el,
+											_List_fromArray(
+												[
+													$mdgriffith$elm_ui$Element$paddingEach(
+													{bottom: 0, left: 0, right: 0, top: 16})
+												]),
+											$mdgriffith$elm_ui$Element$text(call.comments)),
+											A2(
+											$mdgriffith$elm_ui$Element$el,
+											_List_fromArray(
+												[
+													$mdgriffith$elm_ui$Element$paddingEach(
+													{bottom: 0, left: 0, right: 0, top: 16})
+												]),
+											$mdgriffith$elm_ui$Element$text('Taken'))
+										]))
+								]),
+							viewSubTasks))
+					]));
 		},
 		model.calls);
 };
