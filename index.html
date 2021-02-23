@@ -10720,10 +10720,11 @@ var $elm$core$List$filter = F2(
 			list);
 	});
 var $elm$time$Time$now = _Time_now($elm$time$Time$millisToPosix);
-var $author$project$Main$toggleSubTask = F2(
-	function (calls, subTask) {
-		return calls;
-	});
+var $author$project$Main$toggleSubTask = function (subTask) {
+	return _Utils_update(
+		subTask,
+		{done: !subTask.done});
+};
 var $author$project$Main$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -10819,7 +10820,12 @@ var $author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{
-							calls: A2($author$project$Main$toggleSubTask, model.calls, subTask)
+							subTasks: A2(
+								$elm$core$List$map,
+								function (sub) {
+									return _Utils_eq(sub, subTask) ? $author$project$Main$toggleSubTask(sub) : sub;
+								},
+								model.subTasks)
 						}),
 					$elm$core$Platform$Cmd$none);
 		}
@@ -18396,10 +18402,23 @@ var $mdgriffith$elm_ui$Element$Input$text = $mdgriffith$elm_ui$Element$Input$tex
 		spellchecked: false,
 		type_: $mdgriffith$elm_ui$Element$Input$TextInputNode('text')
 	});
-var $author$project$Main$CheckSubTask = function (a) {
-	return {$: 'CheckSubTask', a: a};
+var $author$project$Main$ToggleSubTask = function (a) {
+	return {$: 'ToggleSubTask', a: a};
 };
 var $mdgriffith$elm_ui$Element$Font$bold = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$fontWeight, $mdgriffith$elm_ui$Internal$Style$classes.bold);
+var $danmarcab$material_icons$Material$Icons$Toggle$check_box = A2(
+	$danmarcab$material_icons$Material$Icons$Internal$icon,
+	'0 0 48 48',
+	_List_fromArray(
+		[
+			A2(
+			$elm$svg$Svg$path,
+			_List_fromArray(
+				[
+					$elm$svg$Svg$Attributes$d('M38 6H10c-2.21 0-4 1.79-4 4v28c0 2.21 1.79 4 4 4h28c2.21 0 4-1.79 4-4V10c0-2.21-1.79-4-4-4zM20 34L10 24l2.83-2.83L20 28.34l15.17-15.17L38 16 20 34z')
+				]),
+			_List_Nil)
+		]));
 var $danmarcab$material_icons$Material$Icons$Toggle$check_box_outline_blank = A2(
 	$danmarcab$material_icons$Material$Icons$Internal$icon,
 	'0 0 48 48',
@@ -18630,7 +18649,7 @@ var $author$project$Main$viewCalls = function (model) {
 						_List_fromArray(
 							[
 								$mdgriffith$elm_ui$Element$Events$onClick(
-								$author$project$Main$CheckSubTask(subTask))
+								$author$project$Main$ToggleSubTask(subTask))
 							]),
 						_List_fromArray(
 							[
@@ -18639,7 +18658,7 @@ var $author$project$Main$viewCalls = function (model) {
 								_List_Nil,
 								A2(
 									$Orasund$elm_ui_widgets$Widget$Icon$materialIcons,
-									$danmarcab$material_icons$Material$Icons$Toggle$check_box_outline_blank,
+									subTask.done ? $danmarcab$material_icons$Material$Icons$Toggle$check_box : $danmarcab$material_icons$Material$Icons$Toggle$check_box_outline_blank,
 									{color: $avh4$elm_color$Color$lightGray, size: 24})),
 								$mdgriffith$elm_ui$Element$text(subTask.text)
 							]));
@@ -18857,7 +18876,7 @@ var $author$project$Main$view = function (model) {
 var $author$project$Main$main = $elm$browser$Browser$element(
 	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$view});
 _Platform_export({'Main':{'init':$author$project$Main$main(
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.SubTask":{"args":[],"type":"{ callId : Main.CallId, text : String.String, done : Basics.Bool }"},"Time.Era":{"args":[],"type":"{ start : Basics.Int, offset : Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"InputWhoChanged":["String.String"],"InputCommentsChanged":["String.String"],"InputSubTaskChanged":["String.String"],"AddPreSaveSubTask":[],"AddCall":[],"AddCallWithTime":["Time.Posix"],"DeletePreSaveSubTask":["Main.SubTask"],"GetTimeZone":["Time.Zone"],"CheckSubTask":["Main.SubTask"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Main.CallId":{"args":[],"tags":{"Creating":[],"FromBackend":["Basics.Int"]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"String.String":{"args":[],"tags":{"String":[]}},"Time.Zone":{"args":[],"tags":{"Zone":["Basics.Int","List.List Time.Era"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}}}}})}});}(this));
+	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.SubTask":{"args":[],"type":"{ callId : Main.CallId, text : String.String, done : Basics.Bool }"},"Time.Era":{"args":[],"type":"{ start : Basics.Int, offset : Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"InputWhoChanged":["String.String"],"InputCommentsChanged":["String.String"],"InputSubTaskChanged":["String.String"],"AddPreSaveSubTask":[],"AddCall":[],"AddCallWithTime":["Time.Posix"],"DeletePreSaveSubTask":["Main.SubTask"],"GetTimeZone":["Time.Zone"],"ToggleSubTask":["Main.SubTask"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Main.CallId":{"args":[],"tags":{"Creating":[],"FromBackend":["Basics.Int"]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"String.String":{"args":[],"tags":{"String":[]}},"Time.Zone":{"args":[],"tags":{"Zone":["Basics.Int","List.List Time.Era"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}}}}})}});}(this));
 
   var app = Elm.Main.init({ node: document.getElementById("elm") });
 }

@@ -111,7 +111,7 @@ type Msg
     | AddCallWithTime Time.Posix
     | DeletePreSaveSubTask SubTask
     | GetTimeZone Time.Zone
-    | CheckSubTask SubTask
+    | ToggleSubTask SubTask
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -174,8 +174,21 @@ update msg model =
         GetTimeZone newZone ->
             ( { model | timeZone = newZone }, Cmd.none )
 
-        CheckSubTask subTask ->
-            ( { model | calls = toggleSubTask model.calls subTask }, Cmd.none )
+        ToggleSubTask subTask ->
+            ( { model
+                | subTasks =
+                    List.map
+                        (\sub ->
+                            if sub == subTask then
+                                toggleSubTask sub
+
+                            else
+                                sub
+                        )
+                        model.subTasks
+              }
+            , Cmd.none
+            )
 
 
 {-| Checks calls for highest value of id.
@@ -208,10 +221,11 @@ createNewCallId model =
             FromBackend (x + 1)
 
 
-toggleSubTask : List Call -> SubTask -> List Call
-toggleSubTask calls subTask =
-    -- TODO
-    calls
+toggleSubTask : SubTask -> SubTask
+toggleSubTask subTask =
+    { subTask
+        | done = not subTask.done
+    }
 
 
 
@@ -311,9 +325,18 @@ viewCalls model =
                     List.map
                         (\subTask ->
                             Ui.row
-                                [ Element.Events.onClick (CheckSubTask subTask)
+                                [ Element.Events.onClick (ToggleSubTask subTask)
                                 ]
-                                [ Ui.el [] (Icon.materialIcons Material.Icons.Toggle.check_box_outline_blank { size = 24, color = Color.lightGray })
+                                [ Ui.el []
+                                    (Icon.materialIcons
+                                        (if subTask.done then
+                                            Material.Icons.Toggle.check_box
+
+                                         else
+                                            Material.Icons.Toggle.check_box_outline_blank
+                                        )
+                                        { size = 24, color = Color.lightGray }
+                                    )
                                 , Ui.text subTask.text
                                 ]
                         )
