@@ -12,6 +12,7 @@ import Html.Events
 import Json.Decode
 import Material.Icons.Action
 import Material.Icons.Content
+import Material.Icons.Navigation
 import Material.Icons.Toggle
 import Task
 import Time
@@ -44,6 +45,7 @@ type alias Model =
     , inputComments : String
     , inputSubTask : String
     , inputSearch : String
+    , formVisible : Bool
     , calls : List Call
     , archivedCalls : List Call
     , searchResults : List Call
@@ -59,6 +61,7 @@ init _ =
       , inputComments = ""
       , inputSubTask = ""
       , inputSearch = ""
+      , formVisible = False
       , calls =
             [--     { id = FromBackend 1
              --   , who = "Jan van Carrefour"
@@ -119,6 +122,8 @@ type Msg
     | GetTimeZone Time.Zone
     | ToggleSubTask SubTask
     | ArchiveCall Call
+    | OpenForm
+    | CloseForm
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -170,6 +175,7 @@ update msg model =
                 , preSaveSubTasks = []
                 , inputWho = ""
                 , inputComments = ""
+                , formVisible = False
               }
             , Cmd.none
             )
@@ -209,14 +215,20 @@ update msg model =
                     else
                         call :: model.calls
                 , archivedCalls =
-                    if not (List.member call model.archivedCalls) then
-                        call :: model.archivedCalls
+                    if List.member call model.archivedCalls then
+                        List.filter (\fCall -> fCall /= call) model.archivedCalls
 
                     else
-                        List.filter (\fCall -> fCall /= call) model.archivedCalls
+                        call :: model.archivedCalls
               }
             , Cmd.none
             )
+
+        OpenForm ->
+            ( { model | formVisible = True }, Cmd.none )
+
+        CloseForm ->
+            ( { model | formVisible = False }, Cmd.none )
 
 
 {-| Checks calls for highest value of id.
@@ -270,6 +282,26 @@ view model =
         , Font.color <| color Text
         , Background.color <| color Bg
         , Ui.paddingXY 0 32
+
+        -- Form
+        , if model.formVisible == True then
+            Ui.inFront
+                (Ui.el
+                    [ Background.color <| Ui.rgba 0 0 0 0.7
+                    , Ui.width Ui.fill
+                    , Ui.height Ui.fill
+                    , Font.center
+                    , Ui.behindContent
+                        (Ui.el [ Ui.centerX, Ui.centerY, Ui.paddingEach { top = 0, right = 0, left = 700, bottom = 500 } ]
+                            (Ui.el [ Element.Events.onClick CloseForm ] (Icon.materialIcons Material.Icons.Navigation.close { size = 40, color = Color.white }))
+                        )
+                    , Ui.behindContent (Ui.el [ Ui.width Ui.fill, Ui.height Ui.fill, Element.Events.onClick CloseForm ] Ui.none)
+                    ]
+                    (Ui.column [ Ui.centerX, Ui.centerY, Font.alignLeft ] (viewForm model))
+                )
+
+          else
+            Font.size 18
         ]
         (Ui.column
             [ Ui.width (Ui.fill |> Ui.maximum 1200)
@@ -290,56 +322,13 @@ view model =
                     , label = Input.labelHidden "Zoeken"
                     }
                 ]
-
-            -- Title
-            , Ui.el [ Font.size 24 ]
-                (Ui.text "Voeg een gesprek toe")
-            , --  Client
-              Input.text
-                [ Font.color <| color TextInverted
-                , Ui.width (Ui.shrink |> Ui.minimum 200)
-                , Input.focusedOnLoad
-                ]
-                { onChange = InputWhoChanged
-                , text = model.inputWho
-                , placeholder = Just (Input.placeholder [] (Ui.text "Jef van de Carrefour"))
-                , label = Input.labelAbove [] <| Ui.text "Wie?"
-                }
-
-            --  Comments
-            , Input.multiline
-                [ Font.color <| color TextInverted
-                , Ui.width (Ui.shrink |> Ui.minimum 600)
-                , Ui.height <| Ui.px 120
-                ]
-                { onChange = InputCommentsChanged
-                , text = model.inputComments
-                , placeholder = Nothing
-                , label = Input.labelAbove [] <| Ui.text "Opmerkingen"
-                , spellcheck = True
-                }
-            , Ui.row [ Ui.width (Ui.shrink |> Ui.minimum 200) ]
-                [ Input.text
-                    [ Font.color <| color TextInverted
-                    , onEnter AddPreSaveSubTask
-                    , Ui.htmlAttribute
-                        (Html.Events.onBlur AddPreSaveSubTask)
-                    ]
-                    { onChange = InputSubTaskChanged
-                    , text = model.inputSubTask
-                    , placeholder = Nothing
-                    , label = Input.labelAbove [] <| Ui.text "Taak toevoegen"
-                    }
-                ]
-            , Ui.column [] <| viewPreSaveSubTasks model
-            , Widget.button (Widget.Material.containedButton Widget.Material.darkPalette)
-                { text = "Gesprek opslaan"
+            , Widget.iconButton (Widget.Material.containedButton Widget.Material.darkPalette)
+                { text = "Gesprek toevoegen"
                 , icon = Material.Icons.Content.add |> Icon.materialIcons
-                , onPress = Just AddCall
+                , onPress = Just OpenForm
                 }
-
-            -- Calls
-            , if model.inputSearch == "" then
+            , -- Calls
+              if model.inputSearch == "" then
                 viewUnarchivedCalls model
 
               else
@@ -356,6 +345,57 @@ view model =
                 Ui.none
             ]
         )
+
+
+viewForm : Model -> List (Ui.Element Msg)
+viewForm model =
+    -- Title
+    [ Ui.el [ Font.size 24 ]
+        (Ui.text "Voeg een gesprek toe")
+    , --  Client
+      Input.text
+        [ Font.color <| color TextInverted
+        , Ui.width (Ui.shrink |> Ui.minimum 200)
+        , Input.focusedOnLoad
+        ]
+        { onChange = InputWhoChanged
+        , text = model.inputWho
+        , placeholder = Just (Input.placeholder [] (Ui.text "Jef van de Carrefour"))
+        , label = Input.labelAbove [] <| Ui.text "Wie?"
+        }
+
+    --  Comments
+    , Input.multiline
+        [ Font.color <| color TextInverted
+        , Ui.width (Ui.shrink |> Ui.minimum 600)
+        , Ui.height <| Ui.px 120
+        ]
+        { onChange = InputCommentsChanged
+        , text = model.inputComments
+        , placeholder = Nothing
+        , label = Input.labelAbove [] <| Ui.text "Opmerkingen"
+        , spellcheck = True
+        }
+    , Ui.row [ Ui.width (Ui.shrink |> Ui.minimum 200) ]
+        [ Input.text
+            [ Font.color <| color TextInverted
+            , onEnter AddPreSaveSubTask
+            , Ui.htmlAttribute
+                (Html.Events.onBlur AddPreSaveSubTask)
+            ]
+            { onChange = InputSubTaskChanged
+            , text = model.inputSubTask
+            , placeholder = Nothing
+            , label = Input.labelAbove [] <| Ui.text "Taak toevoegen"
+            }
+        ]
+    , Ui.column [] <| viewPreSaveSubTasks model
+    , Widget.button (Widget.Material.containedButton Widget.Material.darkPalette)
+        { text = "Gesprek opslaan"
+        , icon = Material.Icons.Content.add |> Icon.materialIcons
+        , onPress = Just AddCall
+        }
+    ]
 
 
 viewSearchCalls : Model -> Ui.Element Msg
