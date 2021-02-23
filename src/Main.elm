@@ -17,6 +17,7 @@ import Material.Icons.Toggle
 import Task
 import Time
 import Widget
+import Widget.Customize
 import Widget.Icon as Icon
 import Widget.Material
 import Widget.Material.Color
@@ -75,7 +76,7 @@ init _ =
              --   }
             ]
       , subTasks =
-            [--     { callId = FromBackend 1, text = "Bel labo", done = False }
+            [--      { callId = FromBackend 1, text = "Bel labo", done = False }
              -- , { callId = FromBackend 1, text = "Check die stock", done = False }
              -- , { callId = FromBackend 2, text = "Bel Cissy", done = False }
              -- , { callId = FromBackend 2, text = "Dingske mailen met vraag", done = False }
@@ -291,13 +292,17 @@ view model =
                     , Ui.width Ui.fill
                     , Ui.height Ui.fill
                     , Font.center
+
+                    -- Close icon "x"
                     , Ui.behindContent
                         (Ui.el [ Ui.centerX, Ui.centerY, Ui.paddingEach { top = 0, right = 0, left = 700, bottom = 500 } ]
                             (Ui.el [ Element.Events.onClick CloseForm ] (Icon.materialIcons Material.Icons.Navigation.close { size = 40, color = Color.white }))
                         )
+
+                    -- Also clicking anywhere on the screen (but not on the form) should close the form
                     , Ui.behindContent (Ui.el [ Ui.width Ui.fill, Ui.height Ui.fill, Element.Events.onClick CloseForm ] Ui.none)
                     ]
-                    (Ui.column [ Ui.centerX, Ui.centerY, Font.alignLeft ] (viewForm model))
+                    (Ui.column [ Ui.centerX, Ui.centerY, Font.alignLeft, Ui.spacing 16 ] (viewForm model))
                 )
 
           else
@@ -310,7 +315,14 @@ view model =
             ]
             [ --  Search
               Ui.row [ Ui.width Ui.fill ]
-                [ Ui.el [ Ui.alignRight ] (Icon.materialIcons Material.Icons.Action.search { size = 40, color = Color.lightGray })
+                [ Ui.el [ Ui.alignLeft ]
+                    (Widget.button (Widget.Material.containedButton Widget.Material.darkPalette)
+                        { text = "Gesprek toevoegen"
+                        , icon = Material.Icons.Content.add |> Icon.materialIcons
+                        , onPress = Just OpenForm
+                        }
+                    )
+                , Ui.el [ Ui.alignRight ] (Icon.materialIcons Material.Icons.Action.search { size = 40, color = Color.lightGray })
                 , Input.text
                     [ Font.color <| color TextInverted
                     , Ui.width (Ui.px 320)
@@ -322,11 +334,6 @@ view model =
                     , label = Input.labelHidden "Zoeken"
                     }
                 ]
-            , Widget.iconButton (Widget.Material.containedButton Widget.Material.darkPalette)
-                { text = "Gesprek toevoegen"
-                , icon = Material.Icons.Content.add |> Icon.materialIcons
-                , onPress = Just OpenForm
-                }
             , -- Calls
               if model.inputSearch == "" then
                 viewUnarchivedCalls model
@@ -489,23 +496,27 @@ viewCalls calls subtasks timeZone options =
                     Font.regular
                 ]
                 [ -- The little ball to click
-                  Ui.el [ Ui.width (Ui.px 32), Ui.alignTop, Element.Events.onClick (ArchiveCall call) ]
-                    (if options.archived == True then
-                        Icon.materialIcons Material.Icons.Toggle.check_box { size = 24, color = Color.lightGreen }
+                  Ui.row []
+                    [ Ui.el [ Ui.width (Ui.px 32), Ui.alignTop, Element.Events.onClick (ArchiveCall call) ]
+                        (if options.archived == True then
+                            Icon.materialIcons Material.Icons.Toggle.check_box { size = 24, color = Color.lightGreen }
 
-                     else
-                        Icon.materialIcons Material.Icons.Toggle.radio_button_unchecked { size = 24, color = Color.lightGray }
-                    )
-                , Ui.column []
-                    ([ Ui.column []
-                        [ Ui.el [ Font.bold ] (Ui.text call.who)
-                        , Ui.el [ Font.italic ] (Ui.text (dateToHumanStr timeZone call.when))
-                        , Ui.el [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 } ] (Ui.text call.comments)
-                        , Ui.el [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 } ] (Ui.text "Taken")
+                         else
+                            Icon.materialIcons Material.Icons.Toggle.radio_button_unchecked { size = 24, color = Color.lightGray }
+                        )
+                    , Ui.column [ Ui.alignTop, Ui.width (Ui.px 300) ]
+                        [ Ui.column []
+                            [ Ui.el [ Font.italic ] (Ui.text (dateToHumanStr timeZone call.when))
+                            , Ui.el [ Font.bold ] (Ui.text call.who)
+                            ]
                         ]
-                     ]
-                        ++ viewSubTasks call subtasks
-                    )
+                    , Ui.column [ Ui.alignTop ]
+                        ([ Ui.el [ Ui.paddingEach { top = 0, left = 0, right = 0, bottom = 0 } ] (Ui.text call.comments)
+                         , Ui.el [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 } ] (Ui.text "Taken")
+                         ]
+                            ++ viewSubTasks call subtasks
+                        )
+                    ]
                 ]
         )
         calls
@@ -564,7 +575,15 @@ viewPreSaveSubTasks model =
 
 dateToHumanStr : Time.Zone -> Time.Posix -> String
 dateToHumanStr zone posix =
-    toDutchWeekday (Time.toWeekday zone posix) ++ " " ++ toTwoDigits (Time.toDay zone posix) ++ "/" ++ toDutchMonthNumber (Time.toMonth zone posix)
+    toDutchWeekday (Time.toWeekday zone posix)
+        ++ " "
+        ++ toTwoDigits (Time.toDay zone posix)
+        ++ "/"
+        ++ toDutchMonthNumber (Time.toMonth zone posix)
+        ++ " om "
+        ++ (Time.toHour zone posix |> String.fromInt)
+        ++ "u"
+        ++ (Time.toMinute zone posix |> toTwoDigits)
 
 
 toTwoDigits : Int -> String
