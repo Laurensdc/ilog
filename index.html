@@ -18796,14 +18796,14 @@ var $author$project$Main$viewCalls = F4(
 														{bottom: 0, left: 0, right: 0, top: 0})
 													]),
 												$mdgriffith$elm_ui$Element$text(call.comments)),
-												A2(
+												($elm$core$List$length(subtasks) > 0) ? A2(
 												$mdgriffith$elm_ui$Element$el,
 												_List_fromArray(
 													[
 														$mdgriffith$elm_ui$Element$paddingEach(
 														{bottom: 0, left: 0, right: 0, top: 16})
 													]),
-												$mdgriffith$elm_ui$Element$text('Taken'))
+												$mdgriffith$elm_ui$Element$text('Taken')) : $mdgriffith$elm_ui$Element$none
 											]),
 										A2($author$project$Main$viewSubTasks, call, subtasks)))
 								]))

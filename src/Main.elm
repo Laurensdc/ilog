@@ -512,7 +512,11 @@ viewCalls calls subtasks timeZone options =
                         ]
                     , Ui.column [ Ui.alignTop ]
                         ([ Ui.el [ Ui.paddingEach { top = 0, left = 0, right = 0, bottom = 0 } ] (Ui.text call.comments)
-                         , Ui.el [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 } ] (Ui.text "Taken")
+                         , if List.length subtasks > 0 then
+                            Ui.el [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 } ] (Ui.text "Taken")
+
+                           else
+                            Ui.none
                          ]
                             ++ viewSubTasks call subtasks
                         )
