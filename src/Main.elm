@@ -45,6 +45,7 @@ type alias Model =
     , inputComments : String
     , inputSubTask : String
     , calls : List Call
+    , archivedCalls : List Call
     , subTasks : List SubTask
     , preSaveSubTasks : List SubTask
     , timeZone : Time.Zone
@@ -74,6 +75,7 @@ init _ =
             , { callId = FromBackend 2, text = "Bel Cissy", done = False }
             , { callId = FromBackend 2, text = "Dingske mailen met vraag", done = False }
             ]
+      , archivedCalls = []
       , preSaveSubTasks = []
       , timeZone = Time.utc
       }
@@ -112,6 +114,7 @@ type Msg
     | DeletePreSaveSubTask SubTask
     | GetTimeZone Time.Zone
     | ToggleSubTask SubTask
+    | ArchiveCall Call
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -186,6 +189,14 @@ update msg model =
                                 sub
                         )
                         model.subTasks
+              }
+            , Cmd.none
+            )
+
+        ArchiveCall call ->
+            ( { model
+                | calls = List.filter (\fCall -> fCall /= call) model.calls
+                , archivedCalls = call :: model.archivedCalls
               }
             , Cmd.none
             )
@@ -301,6 +312,8 @@ view model =
                 , onPress = Just AddCall
                 }
             , Ui.column [] <| viewCalls model
+
+            -- , Ui.column [] <| viewArchivedCalls model
             ]
         )
 
@@ -309,36 +322,6 @@ viewCalls : Model -> List (Ui.Element Msg)
 viewCalls model =
     List.map
         (\call ->
-            let
-                subtasks =
-                    List.filter
-                        (\subTask ->
-                            if subTask.callId == call.id then
-                                True
-
-                            else
-                                False
-                        )
-                        model.subTasks
-
-                viewSubTasks =
-                    List.map
-                        (\subTask ->
-                            Ui.row
-                                [ Element.Events.onClick (ToggleSubTask subTask)
-                                ]
-                                [ Ui.el [ Ui.paddingEach { top = 0, left = 0, right = 4, bottom = 0 } ]
-                                    (if subTask.done then
-                                        Icon.materialIcons Material.Icons.Toggle.check_box { size = 24, color = Color.lightGreen }
-
-                                     else
-                                        Icon.materialIcons Material.Icons.Toggle.check_box_outline_blank { size = 24, color = Color.lightGray }
-                                    )
-                                , Ui.text subTask.text
-                                ]
-                        )
-                        subtasks
-            in
             Ui.row [ Ui.paddingXY 0 16 ]
                 [ Ui.el [ Ui.width (Ui.px 32), Ui.alignTop ] (Icon.materialIcons Material.Icons.Toggle.radio_button_unchecked { size = 24, color = Color.lightGray })
                 , Ui.column []
@@ -349,11 +332,70 @@ viewCalls model =
                         , Ui.el [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 } ] (Ui.text "Taken")
                         ]
                      ]
-                        ++ viewSubTasks
+                        ++ viewSubTasks call model.subTasks
                     )
                 ]
         )
         model.calls
+
+
+
+-- viewArchivedCalls : Model -> List (Ui.Element Msg)
+-- viewArchivedCalls model =
+--     List.map
+--         (\call ->
+--             Ui.row [ Ui.paddingXY 0 16 ]
+--                 [ Ui.el [ Ui.width (Ui.px 32), Ui.alignTop ] (Icon.materialIcons Material.Icons.Toggle.radio_button_unchecked { size = 24, color = Color.lightGray })
+--                 , Ui.column []
+--                     ([ Ui.column []
+--                         [ Ui.el [ Font.bold ] (Ui.text call.who)
+--                         , Ui.el [ Font.italic ] (Ui.text (dateToHumanStr model.timeZone call.when))
+--                         , Ui.el [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 } ] (Ui.text call.comments)
+--                         , Ui.el [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 } ] (Ui.text "Taken")
+--                         ]
+--                      ]
+--                         ++ viewSubTasks call model.subTasks
+--                     )
+--                 ]
+--         )
+--         model.archivedCalls
+
+
+viewSubTasks : Call -> List SubTask -> List (Ui.Element Msg)
+viewSubTasks call subtasks =
+    let
+        filteredSubTasks =
+            List.filter
+                (\subTask ->
+                    if subTask.callId == call.id then
+                        True
+
+                    else
+                        False
+                )
+                subtasks
+    in
+    List.map
+        (\subTask ->
+            Ui.row
+                [ Element.Events.onClick (ToggleSubTask subTask)
+                , Ui.pointer
+                ]
+                [ Ui.el [ Ui.paddingEach { top = 0, left = 0, right = 4, bottom = 0 } ]
+                    (if subTask.done then
+                        Icon.materialIcons Material.Icons.Toggle.check_box { size = 24, color = Color.lightGreen }
+
+                     else
+                        Icon.materialIcons Material.Icons.Toggle.check_box_outline_blank { size = 24, color = Color.lightGray }
+                    )
+                , if subTask.done then
+                    Ui.el [ Font.strike ] (Ui.text subTask.text)
+
+                  else
+                    Ui.text subTask.text
+                ]
+        )
+        filteredSubTasks
 
 
 {-| Subtasks before they are submitted
