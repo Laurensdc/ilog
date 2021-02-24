@@ -8,6 +8,7 @@ import Element.Events
 import Element.Font as Font
 import Element.Input as Input
 import Html
+import Html.Attributes
 import Html.Events
 import Json.Decode
 import Material.Icons.Action
@@ -56,6 +57,30 @@ type alias Model =
     }
 
 
+dummyCalls : List Call
+dummyCalls =
+    [ { id = FromBackend 1
+      , who = "Jan van Carrefour"
+      , comments = "Nog bellen naar labo enal, kwenie"
+      , when = Time.millisToPosix 1713870869763
+      }
+    , { id = FromBackend 2
+      , who = "Eva / Beyond Meat"
+      , comments = "Wa een tang"
+      , when = Time.millisToPosix 1613981973556
+      }
+    ]
+
+
+dummySubTasks : List SubTask
+dummySubTasks =
+    [ { callId = FromBackend 1, text = "Bel labo", done = False }
+    , { callId = FromBackend 1, text = "Check die stock", done = False }
+    , { callId = FromBackend 2, text = "Bel Cissy", done = False }
+    , { callId = FromBackend 2, text = "Dingske mailen met vraag", done = False }
+    ]
+
+
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( { inputWho = ""
@@ -63,24 +88,8 @@ init _ =
       , inputSubTask = ""
       , inputSearch = ""
       , formVisible = False
-      , calls =
-            [--     { id = FromBackend 1
-             --   , who = "Jan van Carrefour"
-             --   , comments = "Nog bellen naar labo enal, kwenie"
-             --   , when = Time.millisToPosix 1613870869763
-             --   }
-             -- , { id = FromBackend 2
-             --   , who = "Eva / Beyond Meat"
-             --   , comments = "Wa een tang"
-             --   , when = Time.millisToPosix 1613981973556
-             --   }
-            ]
-      , subTasks =
-            [--      { callId = FromBackend 1, text = "Bel labo", done = False }
-             -- , { callId = FromBackend 1, text = "Check die stock", done = False }
-             -- , { callId = FromBackend 2, text = "Bel Cissy", done = False }
-             -- , { callId = FromBackend 2, text = "Dingske mailen met vraag", done = False }
-            ]
+      , calls = dummyCalls
+      , subTasks = dummySubTasks
       , archivedCalls = []
       , preSaveSubTasks = []
       , searchResults = []
@@ -275,6 +284,32 @@ toggleSubTask subTask =
 
 view : Model -> Html.Html Msg
 view model =
+    let
+        overlayFormIfVisible =
+            if model.formVisible == True then
+                Ui.inFront
+                    (Ui.el
+                        [ Background.color <| Ui.rgba 0 0 0 0.7
+                        , Ui.width Ui.fill
+                        , Ui.height Ui.fill
+                        , Font.center
+
+                        -- Close icon "x"
+                        , Ui.behindContent
+                            (Ui.el [ Ui.centerX, Ui.centerY, Ui.paddingEach { top = 0, right = 0, left = 700, bottom = 500 } ]
+                                (Ui.el [ Element.Events.onClick CloseForm ] (Icon.materialIcons Material.Icons.Navigation.close { size = 40, color = Color.white }))
+                            )
+
+                        -- Also clicking anywhere on the screen (but not on the form) should close the form
+                        , Ui.behindContent (Ui.el [ Ui.width Ui.fill, Ui.height Ui.fill, Element.Events.onClick CloseForm ] Ui.none)
+                        ]
+                        (Ui.column [ Ui.centerX, Ui.centerY, Font.alignLeft, Ui.spacing 16 ] (viewForm model))
+                    )
+
+            else
+                -- Nothing
+                Ui.htmlAttribute (Html.Attributes.class "")
+    in
     Ui.layout
         [ Font.family
             [ Font.external { url = "https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap", name = "Roboto" }
@@ -285,35 +320,14 @@ view model =
         , Ui.paddingXY 0 32
 
         -- Form
-        , if model.formVisible == True then
-            Ui.inFront
-                (Ui.el
-                    [ Background.color <| Ui.rgba 0 0 0 0.7
-                    , Ui.width Ui.fill
-                    , Ui.height Ui.fill
-                    , Font.center
-
-                    -- Close icon "x"
-                    , Ui.behindContent
-                        (Ui.el [ Ui.centerX, Ui.centerY, Ui.paddingEach { top = 0, right = 0, left = 700, bottom = 500 } ]
-                            (Ui.el [ Element.Events.onClick CloseForm ] (Icon.materialIcons Material.Icons.Navigation.close { size = 40, color = Color.white }))
-                        )
-
-                    -- Also clicking anywhere on the screen (but not on the form) should close the form
-                    , Ui.behindContent (Ui.el [ Ui.width Ui.fill, Ui.height Ui.fill, Element.Events.onClick CloseForm ] Ui.none)
-                    ]
-                    (Ui.column [ Ui.centerX, Ui.centerY, Font.alignLeft, Ui.spacing 16 ] (viewForm model))
-                )
-
-          else
-            Font.size 18
+        , overlayFormIfVisible
         ]
         (Ui.column
             [ Ui.width (Ui.fill |> Ui.maximum 1200)
             , Ui.centerX
             , Ui.spacing 16
             ]
-            [ --  Search
+            [ -- Show Form Button
               Ui.row [ Ui.width Ui.fill ]
                 [ Ui.el [ Ui.alignLeft ]
                     (Widget.button (Widget.Material.containedButton Widget.Material.darkPalette)
@@ -322,6 +336,8 @@ view model =
                         , onPress = Just OpenForm
                         }
                     )
+
+                --  Search
                 , Ui.el [ Ui.alignRight ] (Icon.materialIcons Material.Icons.Action.search { size = 40, color = Color.lightGray })
                 , Input.text
                     [ Font.color <| color TextInverted
@@ -383,6 +399,8 @@ viewForm model =
         , label = Input.labelAbove [] <| Ui.text "Opmerkingen"
         , spellcheck = True
         }
+
+    -- Pre Save SubTasks
     , Ui.row [ Ui.width (Ui.shrink |> Ui.minimum 200) ]
         [ Input.text
             [ Font.color <| color TextInverted
@@ -485,6 +503,18 @@ viewArchivedCalls model =
 
 viewCalls : List Call -> List SubTask -> Time.Zone -> { archived : Bool } -> List (Ui.Element Msg)
 viewCalls calls subtasks timeZone options =
+    let
+        sortedCalls =
+            List.sortWith
+                (\a b ->
+                    if Time.posixToMillis a.when > Time.posixToMillis b.when then
+                        GT
+
+                    else
+                        LT
+                )
+                calls
+    in
     List.map
         (\call ->
             Ui.row
@@ -523,7 +553,7 @@ viewCalls calls subtasks timeZone options =
                     ]
                 ]
         )
-        calls
+        sortedCalls
 
 
 viewSubTasks : Call -> List SubTask -> List (Ui.Element Msg)
