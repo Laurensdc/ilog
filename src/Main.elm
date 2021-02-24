@@ -54,6 +54,7 @@ type alias Model =
     , subTasks : List SubTask
     , preSaveSubTasks : List SubTask
     , timeZone : Time.Zone
+    , today : Time.Posix
     }
 
 
@@ -62,12 +63,22 @@ dummyCalls =
     [ { id = FromBackend 1
       , who = "Jan van Carrefour"
       , comments = "Nog bellen naar labo enal, kwenie"
-      , when = Time.millisToPosix 1713870869763
+      , when = Time.millisToPosix 1614187125166
       }
     , { id = FromBackend 2
       , who = "Eva / Beyond Meat"
       , comments = "Wa een tang"
-      , when = Time.millisToPosix 1613981973556
+      , when = Time.millisToPosix 1614027125166
+      }
+    , { id = FromBackend 3
+      , who = "AAAAt"
+      , comments = "Wdddd een tang"
+      , when = Time.millisToPosix 1613527125166
+      }
+    , { id = FromBackend 4
+      , who = "BBBBBBBBt"
+      , comments = "Ik ben epic"
+      , when = Time.millisToPosix 1613527125166
       }
     ]
 
@@ -94,8 +105,9 @@ init _ =
       , preSaveSubTasks = []
       , searchResults = []
       , timeZone = Time.utc
+      , today = Time.millisToPosix 0
       }
-    , Task.perform GetTimeZone Time.here
+    , Cmd.batch [ Task.perform GetTimeZone Time.here, Task.perform SetToday Time.now ]
     )
 
 
@@ -129,11 +141,12 @@ type Msg
     | AddCall
     | AddCallWithTime Time.Posix
     | DeletePreSaveSubTask SubTask
-    | GetTimeZone Time.Zone
     | ToggleSubTask SubTask
     | ArchiveCall Call
     | OpenForm
     | CloseForm
+    | GetTimeZone Time.Zone
+    | SetToday Time.Posix
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -199,6 +212,9 @@ update msg model =
 
         GetTimeZone newZone ->
             ( { model | timeZone = newZone }, Cmd.none )
+
+        SetToday time ->
+            ( { model | today = time }, Cmd.none )
 
         ToggleSubTask subTask ->
             ( { model
@@ -350,6 +366,7 @@ view model =
                     , label = Input.labelHidden "Zoeken"
                     }
                 ]
+            , Ui.text (dateToHumanStr model.timeZone (lastMondayBeforeDate model.timeZone model.today))
             , -- Calls
               if model.inputSearch == "" then
                 viewUnarchivedCalls model
@@ -456,8 +473,8 @@ viewSearchCalls model =
                 , Font.bold
                 ]
                 (Ui.text "Zoekresultaten")
-            , Ui.column [] <| viewCalls foundCalls model.subTasks model.timeZone { archived = False }
-            , Ui.column [] <| viewCalls foundArchivedCalls model.subTasks model.timeZone { archived = True }
+            , Ui.column [] <| viewCalls foundCalls model.subTasks { archived = False, timeZone = model.timeZone, today = model.today }
+            , Ui.column [] <| viewCalls foundArchivedCalls model.subTasks { archived = True, timeZone = model.timeZone, today = model.today }
             ]
 
     else
@@ -474,7 +491,7 @@ viewUnarchivedCalls model =
                 , Font.bold
                 ]
                 (Ui.text "Gesprekken / todo's")
-            , Ui.column [] <| viewCalls model.calls model.subTasks model.timeZone { archived = False }
+            , Ui.column [] <| viewCalls model.calls model.subTasks { archived = False, timeZone = model.timeZone, today = model.today }
             ]
 
     else
@@ -494,26 +511,45 @@ viewArchivedCalls model =
                 (Ui.text
                     "Archief"
                 )
-            , Ui.column [] <| viewCalls model.archivedCalls model.subTasks model.timeZone { archived = True }
+            , Ui.column [] <| viewCalls model.archivedCalls model.subTasks { archived = True, timeZone = model.timeZone, today = model.today }
             ]
 
     else
         Ui.none
 
 
-viewCalls : List Call -> List SubTask -> Time.Zone -> { archived : Bool } -> List (Ui.Element Msg)
-viewCalls calls subtasks timeZone options =
+viewCalls : List Call -> List SubTask -> { archived : Bool, timeZone : Time.Zone, today : Time.Posix } -> List (Ui.Element Msg)
+viewCalls calls subtasks options =
     let
+        zone =
+            options.timeZone
+
+        today =
+            options.today
+
+        lastMonday =
+            Debug.log "last monday " <|
+                Time.posixToMillis <|
+                    lastMondayBeforeDate
+                        zone
+                        today
+
         sortedCalls =
             List.sortWith
                 (\a b ->
                     if Time.posixToMillis a.when > Time.posixToMillis b.when then
-                        GT
+                        LT
 
                     else
-                        LT
+                        GT
                 )
                 calls
+
+        callsToday =
+            List.filter (\call -> Time.toDay zone call.when == Time.toDay zone today) sortedCalls
+
+        callsEarlierThisWeek =
+            List.filter (\call -> True) sortedCalls
     in
     List.map
         (\call ->
@@ -534,15 +570,32 @@ viewCalls calls subtasks timeZone options =
                          else
                             Icon.materialIcons Material.Icons.Toggle.radio_button_unchecked { size = 24, color = Color.lightGray }
                         )
+
+                    -- Date / time
                     , Ui.column [ Ui.alignTop, Ui.width (Ui.px 300) ]
                         [ Ui.column []
-                            [ Ui.el [ Font.italic ] (Ui.text (dateToHumanStr timeZone call.when))
+                            [ Ui.el [ Font.italic ] (Ui.text (dateToHumanStr options.timeZone call.when))
                             , Ui.el [ Font.bold ] (Ui.text call.who)
                             ]
                         ]
+
+                    -- Comments & SubTasks
                     , Ui.column [ Ui.alignTop ]
                         ([ Ui.el [ Ui.paddingEach { top = 0, left = 0, right = 0, bottom = 0 } ] (Ui.text call.comments)
-                         , if List.length subtasks > 0 then
+                         , if
+                            List.length
+                                (List.filter
+                                    (\s ->
+                                        if s.callId == call.id then
+                                            True
+
+                                        else
+                                            False
+                                    )
+                                    subtasks
+                                )
+                                > 0
+                           then
                             Ui.el [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 } ] (Ui.text "Taken")
 
                            else
@@ -607,19 +660,6 @@ viewPreSaveSubTasks model =
         model.preSaveSubTasks
 
 
-dateToHumanStr : Time.Zone -> Time.Posix -> String
-dateToHumanStr zone posix =
-    toDutchWeekday (Time.toWeekday zone posix)
-        ++ " "
-        ++ toTwoDigits (Time.toDay zone posix)
-        ++ "/"
-        ++ toDutchMonthNumber (Time.toMonth zone posix)
-        ++ " om "
-        ++ (Time.toHour zone posix |> String.fromInt)
-        ++ ":"
-        ++ (Time.toMinute zone posix |> toTwoDigits)
-
-
 toTwoDigits : Int -> String
 toTwoDigits i =
     if i < 10 then
@@ -627,6 +667,73 @@ toTwoDigits i =
 
     else
         String.fromInt i
+
+
+
+-- TIME STUFF
+
+
+rollbackDays : Int -> Time.Posix -> Time.Posix
+rollbackDays days time =
+    let
+        aDay =
+            24 * 60 * 60 * 1000
+    in
+    (Time.posixToMillis time - days * aDay)
+        |> Time.millisToPosix
+
+
+lastMondayBeforeDate : Time.Zone -> Time.Posix -> Time.Posix
+lastMondayBeforeDate zone time =
+    let
+        intWeekday =
+            Time.toWeekday zone time
+                |> weekDayToInt
+    in
+    rollbackDays intWeekday time
+
+
+oneWeekInMs : Int
+oneWeekInMs =
+    1000 * 60 * 60 * 24 * 7
+
+
+dateToHumanStr : Time.Zone -> Time.Posix -> String
+dateToHumanStr zone posix =
+    toDutchWeekday (Time.toWeekday zone posix)
+        ++ " "
+        ++ toTwoDigits (Time.toDay zone posix)
+        ++ "/"
+        ++ toDutchMonthNumber (Time.toMonth zone posix)
+        ++ "\n"
+        ++ (Time.toHour zone posix |> String.fromInt)
+        ++ ":"
+        ++ (Time.toMinute zone posix |> toTwoDigits)
+
+
+weekDayToInt : Time.Weekday -> Int
+weekDayToInt day =
+    case day of
+        Time.Mon ->
+            0
+
+        Time.Tue ->
+            1
+
+        Time.Wed ->
+            2
+
+        Time.Thu ->
+            3
+
+        Time.Fri ->
+            4
+
+        Time.Sat ->
+            5
+
+        Time.Sun ->
+            6
 
 
 toDutchMonthStr : Time.Month -> String
