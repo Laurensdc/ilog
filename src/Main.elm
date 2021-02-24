@@ -586,7 +586,7 @@ dateToHumanStr zone posix =
         ++ toDutchMonthNumber (Time.toMonth zone posix)
         ++ " om "
         ++ (Time.toHour zone posix |> String.fromInt)
-        ++ "u"
+        ++ ":"
         ++ (Time.toMinute zone posix |> toTwoDigits)
 
 
