@@ -1,17 +1,3 @@
-<!DOCTYPE HTML>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Main</title>
-  <style>body { padding: 0; margin: 0; }</style>
-</head>
-
-<body>
-
-<pre id="elm"></pre>
-
-<script>
-try {
 (function(scope){
 'use strict';
 
@@ -19515,28 +19501,10 @@ var $author$project$Main$viewDocument = function (model) {
 			[
 				$author$project$Main$view(model)
 			]),
-		title: '📝 ILog'
+		title: 'ILog'
 	};
 };
 var $author$project$Main$main = $elm$browser$Browser$document(
 	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$viewDocument});
 _Platform_export({'Main':{'init':$author$project$Main$main(
 	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.Call":{"args":[],"type":"{ id : Main.CallId, who : String.String, comments : String.String, when : Time.Posix }"},"Main.SubTask":{"args":[],"type":"{ callId : Main.CallId, text : String.String, done : Basics.Bool }"},"Time.Era":{"args":[],"type":"{ start : Basics.Int, offset : Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"InputWhoChanged":["String.String"],"InputCommentsChanged":["String.String"],"InputSubTaskChanged":["String.String"],"InputSearchChanged":["String.String"],"AddPreSaveSubTask":[],"AddCall":[],"AddCallWithTime":["Time.Posix"],"DeletePreSaveSubTask":["Main.SubTask"],"ToggleSubTask":["Main.SubTask"],"ArchiveCall":["Main.Call"],"OpenForm":[],"CloseForm":[],"GetTimeZone":["Time.Zone"],"SetToday":["Time.Posix"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Main.CallId":{"args":[],"tags":{"Creating":[],"FromBackend":["Basics.Int"]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"String.String":{"args":[],"tags":{"String":[]}},"Time.Zone":{"args":[],"tags":{"Zone":["Basics.Int","List.List Time.Era"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}}}}})}});}(this));
-
-  var app = Elm.Main.init({ node: document.getElementById("elm") });
-}
-catch (e)
-{
-  // display initialization errors (e.g. bad flags, infinite recursion)
-  var header = document.createElement("h1");
-  header.style.fontFamily = "monospace";
-  header.innerText = "Initialization Error";
-  var pre = document.getElementById("elm");
-  document.body.insertBefore(header, pre);
-  pre.innerText = e;
-  throw e;
-}
-</script>
-
-</body>
-</html>

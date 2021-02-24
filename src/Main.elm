@@ -306,7 +306,7 @@ toggleSubTask subTask =
 
 viewDocument : Model -> Browser.Document Msg
 viewDocument model =
-    { title = "📝 ILog", body = [ view model ] }
+    { title = "ILog", body = [ view model ] }
 
 
 view : Model -> Html.Html Msg
