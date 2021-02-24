@@ -17,6 +17,7 @@ import Material.Icons.Navigation
 import Material.Icons.Toggle
 import Task
 import Time
+import Time.Extra as Time
 import Widget
 import Widget.Customize
 import Widget.Icon as Icon
@@ -79,6 +80,11 @@ dummyCalls =
       , who = "BBBBBBBBt"
       , comments = "Ik ben epic"
       , when = Time.millisToPosix 1613527125166
+      }
+    , { id = FromBackend 5
+      , who = "Dinsdag 23/02 22:33?"
+      , comments = "Soep"
+      , when = Time.millisToPosix 1614116005166
       }
     ]
 
@@ -366,7 +372,6 @@ view model =
                     , label = Input.labelHidden "Zoeken"
                     }
                 ]
-            , Ui.text (dateToHumanStr model.timeZone (lastMondayBeforeDate model.timeZone model.today))
             , -- Calls
               if model.inputSearch == "" then
                 viewUnarchivedCalls model
@@ -491,7 +496,12 @@ viewUnarchivedCalls model =
                 , Font.bold
                 ]
                 (Ui.text "Gesprekken / todo's")
-            , Ui.column [] <| viewCalls model.calls model.subTasks { archived = False, timeZone = model.timeZone, today = model.today }
+            , Ui.text "Vandaag"
+            , Ui.column [] <| viewCalls (filterCallsFromDay model.calls model.timeZone model.today) model.subTasks { archived = False, timeZone = model.timeZone, today = model.today }
+            , Ui.text "Eerder deze week"
+            , Ui.column [] <| viewCalls (filterCallsFromThisWeekButNotToday model.calls model.timeZone model.today) model.subTasks { archived = False, timeZone = model.timeZone, today = model.today }
+            , Ui.text "Lang geleden..."
+            , Ui.column [] <| viewCalls (filterCallsBeforeThisWeek model.calls model.timeZone model.today) model.subTasks { archived = False, timeZone = model.timeZone, today = model.today }
             ]
 
     else
@@ -518,22 +528,53 @@ viewArchivedCalls model =
         Ui.none
 
 
+filterCallsFromDay : List Call -> Time.Zone -> Time.Posix -> List Call
+filterCallsFromDay calls zone day =
+    List.filter
+        (\call -> Time.posixToMillis (Time.startOfDay zone day) == Time.posixToMillis (Time.startOfDay zone call.when))
+        calls
+
+
+filterCallsFromThisWeekButNotToday : List Call -> Time.Zone -> Time.Posix -> List Call
+filterCallsFromThisWeekButNotToday calls zone today =
+    let
+        startOfWeekInt =
+            Time.posixToMillis <| Time.startOfDay zone <| Time.startOfWeek zone Time.Mon today
+
+        startOfTodayInt =
+            Time.posixToMillis <| Time.startOfDay zone today
+    in
+    List.filter
+        (\call ->
+            let
+                startOfCallDayInt =
+                    Time.posixToMillis <| Time.startOfDay zone call.when
+            in
+            (startOfCallDayInt >= startOfWeekInt) && (startOfCallDayInt < startOfTodayInt)
+        )
+        calls
+
+
+filterCallsBeforeThisWeek : List Call -> Time.Zone -> Time.Posix -> List Call
+filterCallsBeforeThisWeek calls zone today =
+    let
+        startOfWeekInt =
+            Time.posixToMillis <| Time.startOfDay zone <| Time.startOfWeek zone Time.Mon today
+    in
+    List.filter
+        (\call ->
+            let
+                startOfCallDayInt =
+                    Time.posixToMillis <| Time.startOfDay zone call.when
+            in
+            startOfWeekInt > startOfCallDayInt
+        )
+        calls
+
+
 viewCalls : List Call -> List SubTask -> { archived : Bool, timeZone : Time.Zone, today : Time.Posix } -> List (Ui.Element Msg)
 viewCalls calls subtasks options =
     let
-        zone =
-            options.timeZone
-
-        today =
-            options.today
-
-        lastMonday =
-            Debug.log "last monday " <|
-                Time.posixToMillis <|
-                    lastMondayBeforeDate
-                        zone
-                        today
-
         sortedCalls =
             List.sortWith
                 (\a b ->
@@ -544,12 +585,6 @@ viewCalls calls subtasks options =
                         GT
                 )
                 calls
-
-        callsToday =
-            List.filter (\call -> Time.toDay zone call.when == Time.toDay zone today) sortedCalls
-
-        callsEarlierThisWeek =
-            List.filter (\call -> True) sortedCalls
     in
     List.map
         (\call ->
@@ -696,6 +731,11 @@ lastMondayBeforeDate zone time =
 oneWeekInMs : Int
 oneWeekInMs =
     1000 * 60 * 60 * 24 * 7
+
+
+oneDayInMs : Int
+oneDayInMs =
+    1000 * 60 * 60 * 24
 
 
 dateToHumanStr : Time.Zone -> Time.Posix -> String

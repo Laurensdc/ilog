@@ -10634,6 +10634,12 @@ var $author$project$Main$dummyCalls = _List_fromArray(
 		id: $author$project$Main$FromBackend(4),
 		when: $elm$time$Time$millisToPosix(1613527125166),
 		who: 'BBBBBBBBt'
+	},
+		{
+		comments: 'Soep',
+		id: $author$project$Main$FromBackend(5),
+		when: $elm$time$Time$millisToPosix(1614116005166),
+		who: 'Dinsdag 23/02 22:33?'
 	}
 	]);
 var $author$project$Main$dummySubTasks = _List_fromArray(
@@ -17302,222 +17308,6 @@ var $Orasund$elm_ui_widgets$Internal$Material$Palette$darkPalette = {
 	surface: A3($avh4$elm_color$Color$rgb255, 18, 18, 18)
 };
 var $Orasund$elm_ui_widgets$Widget$Material$darkPalette = $Orasund$elm_ui_widgets$Internal$Material$Palette$darkPalette;
-var $elm$time$Time$flooredDiv = F2(
-	function (numerator, denominator) {
-		return $elm$core$Basics$floor(numerator / denominator);
-	});
-var $elm$time$Time$posixToMillis = function (_v0) {
-	var millis = _v0.a;
-	return millis;
-};
-var $elm$time$Time$toAdjustedMinutesHelp = F3(
-	function (defaultOffset, posixMinutes, eras) {
-		toAdjustedMinutesHelp:
-		while (true) {
-			if (!eras.b) {
-				return posixMinutes + defaultOffset;
-			} else {
-				var era = eras.a;
-				var olderEras = eras.b;
-				if (_Utils_cmp(era.start, posixMinutes) < 0) {
-					return posixMinutes + era.offset;
-				} else {
-					var $temp$defaultOffset = defaultOffset,
-						$temp$posixMinutes = posixMinutes,
-						$temp$eras = olderEras;
-					defaultOffset = $temp$defaultOffset;
-					posixMinutes = $temp$posixMinutes;
-					eras = $temp$eras;
-					continue toAdjustedMinutesHelp;
-				}
-			}
-		}
-	});
-var $elm$time$Time$toAdjustedMinutes = F2(
-	function (_v0, time) {
-		var defaultOffset = _v0.a;
-		var eras = _v0.b;
-		return A3(
-			$elm$time$Time$toAdjustedMinutesHelp,
-			defaultOffset,
-			A2(
-				$elm$time$Time$flooredDiv,
-				$elm$time$Time$posixToMillis(time),
-				60000),
-			eras);
-	});
-var $elm$time$Time$toCivil = function (minutes) {
-	var rawDay = A2($elm$time$Time$flooredDiv, minutes, 60 * 24) + 719468;
-	var era = (((rawDay >= 0) ? rawDay : (rawDay - 146096)) / 146097) | 0;
-	var dayOfEra = rawDay - (era * 146097);
-	var yearOfEra = ((((dayOfEra - ((dayOfEra / 1460) | 0)) + ((dayOfEra / 36524) | 0)) - ((dayOfEra / 146096) | 0)) / 365) | 0;
-	var dayOfYear = dayOfEra - (((365 * yearOfEra) + ((yearOfEra / 4) | 0)) - ((yearOfEra / 100) | 0));
-	var mp = (((5 * dayOfYear) + 2) / 153) | 0;
-	var month = mp + ((mp < 10) ? 3 : (-9));
-	var year = yearOfEra + (era * 400);
-	return {
-		day: (dayOfYear - ((((153 * mp) + 2) / 5) | 0)) + 1,
-		month: month,
-		year: year + ((month <= 2) ? 1 : 0)
-	};
-};
-var $elm$time$Time$toDay = F2(
-	function (zone, time) {
-		return $elm$time$Time$toCivil(
-			A2($elm$time$Time$toAdjustedMinutes, zone, time)).day;
-	});
-var $author$project$Main$toDutchMonthNumber = function (month) {
-	switch (month.$) {
-		case 'Jan':
-			return '01';
-		case 'Feb':
-			return '02';
-		case 'Mar':
-			return '03';
-		case 'Apr':
-			return '04';
-		case 'May':
-			return '05';
-		case 'Jun':
-			return '06';
-		case 'Jul':
-			return '07';
-		case 'Aug':
-			return '08';
-		case 'Sep':
-			return '09';
-		case 'Oct':
-			return '10';
-		case 'Nov':
-			return '11';
-		default:
-			return '12';
-	}
-};
-var $author$project$Main$toDutchWeekday = function (day) {
-	switch (day.$) {
-		case 'Mon':
-			return 'Maandag';
-		case 'Tue':
-			return 'Dinsdag';
-		case 'Wed':
-			return 'Woensdag';
-		case 'Thu':
-			return 'Donderdag';
-		case 'Fri':
-			return 'Vrijdag';
-		case 'Sat':
-			return 'Zaterdag';
-		default:
-			return 'Zondag';
-	}
-};
-var $elm$core$Basics$modBy = _Basics_modBy;
-var $elm$time$Time$toHour = F2(
-	function (zone, time) {
-		return A2(
-			$elm$core$Basics$modBy,
-			24,
-			A2(
-				$elm$time$Time$flooredDiv,
-				A2($elm$time$Time$toAdjustedMinutes, zone, time),
-				60));
-	});
-var $elm$time$Time$toMinute = F2(
-	function (zone, time) {
-		return A2(
-			$elm$core$Basics$modBy,
-			60,
-			A2($elm$time$Time$toAdjustedMinutes, zone, time));
-	});
-var $elm$time$Time$Apr = {$: 'Apr'};
-var $elm$time$Time$Aug = {$: 'Aug'};
-var $elm$time$Time$Dec = {$: 'Dec'};
-var $elm$time$Time$Feb = {$: 'Feb'};
-var $elm$time$Time$Jan = {$: 'Jan'};
-var $elm$time$Time$Jul = {$: 'Jul'};
-var $elm$time$Time$Jun = {$: 'Jun'};
-var $elm$time$Time$Mar = {$: 'Mar'};
-var $elm$time$Time$May = {$: 'May'};
-var $elm$time$Time$Nov = {$: 'Nov'};
-var $elm$time$Time$Oct = {$: 'Oct'};
-var $elm$time$Time$Sep = {$: 'Sep'};
-var $elm$time$Time$toMonth = F2(
-	function (zone, time) {
-		var _v0 = $elm$time$Time$toCivil(
-			A2($elm$time$Time$toAdjustedMinutes, zone, time)).month;
-		switch (_v0) {
-			case 1:
-				return $elm$time$Time$Jan;
-			case 2:
-				return $elm$time$Time$Feb;
-			case 3:
-				return $elm$time$Time$Mar;
-			case 4:
-				return $elm$time$Time$Apr;
-			case 5:
-				return $elm$time$Time$May;
-			case 6:
-				return $elm$time$Time$Jun;
-			case 7:
-				return $elm$time$Time$Jul;
-			case 8:
-				return $elm$time$Time$Aug;
-			case 9:
-				return $elm$time$Time$Sep;
-			case 10:
-				return $elm$time$Time$Oct;
-			case 11:
-				return $elm$time$Time$Nov;
-			default:
-				return $elm$time$Time$Dec;
-		}
-	});
-var $author$project$Main$toTwoDigits = function (i) {
-	return (i < 10) ? ('0' + $elm$core$String$fromInt(i)) : $elm$core$String$fromInt(i);
-};
-var $elm$time$Time$Fri = {$: 'Fri'};
-var $elm$time$Time$Mon = {$: 'Mon'};
-var $elm$time$Time$Sat = {$: 'Sat'};
-var $elm$time$Time$Sun = {$: 'Sun'};
-var $elm$time$Time$Thu = {$: 'Thu'};
-var $elm$time$Time$Tue = {$: 'Tue'};
-var $elm$time$Time$Wed = {$: 'Wed'};
-var $elm$time$Time$toWeekday = F2(
-	function (zone, time) {
-		var _v0 = A2(
-			$elm$core$Basics$modBy,
-			7,
-			A2(
-				$elm$time$Time$flooredDiv,
-				A2($elm$time$Time$toAdjustedMinutes, zone, time),
-				60 * 24));
-		switch (_v0) {
-			case 0:
-				return $elm$time$Time$Thu;
-			case 1:
-				return $elm$time$Time$Fri;
-			case 2:
-				return $elm$time$Time$Sat;
-			case 3:
-				return $elm$time$Time$Sun;
-			case 4:
-				return $elm$time$Time$Mon;
-			case 5:
-				return $elm$time$Time$Tue;
-			default:
-				return $elm$time$Time$Wed;
-		}
-	});
-var $author$project$Main$dateToHumanStr = F2(
-	function (zone, posix) {
-		return $author$project$Main$toDutchWeekday(
-			A2($elm$time$Time$toWeekday, zone, posix)) + (' ' + ($author$project$Main$toTwoDigits(
-			A2($elm$time$Time$toDay, zone, posix)) + ('/' + ($author$project$Main$toDutchMonthNumber(
-			A2($elm$time$Time$toMonth, zone, posix)) + ('\n' + ($elm$core$String$fromInt(
-			A2($elm$time$Time$toHour, zone, posix)) + (':' + $author$project$Main$toTwoDigits(
-			A2($elm$time$Time$toMinute, zone, posix)))))))));
-	});
 var $mdgriffith$elm_ui$Internal$Model$ImportFont = F2(
 	function (a, b) {
 		return {$: 'ImportFont', a: a, b: b};
@@ -17592,36 +17382,6 @@ var $mdgriffith$elm_ui$Element$Input$HiddenLabel = function (a) {
 	return {$: 'HiddenLabel', a: a};
 };
 var $mdgriffith$elm_ui$Element$Input$labelHidden = $mdgriffith$elm_ui$Element$Input$HiddenLabel;
-var $author$project$Main$rollbackDays = F2(
-	function (days, time) {
-		var aDay = ((24 * 60) * 60) * 1000;
-		return $elm$time$Time$millisToPosix(
-			$elm$time$Time$posixToMillis(time) - (days * aDay));
-	});
-var $author$project$Main$weekDayToInt = function (day) {
-	switch (day.$) {
-		case 'Mon':
-			return 0;
-		case 'Tue':
-			return 1;
-		case 'Wed':
-			return 2;
-		case 'Thu':
-			return 3;
-		case 'Fri':
-			return 4;
-		case 'Sat':
-			return 5;
-		default:
-			return 6;
-	}
-};
-var $author$project$Main$lastMondayBeforeDate = F2(
-	function (zone, time) {
-		var intWeekday = $author$project$Main$weekDayToInt(
-			A2($elm$time$Time$toWeekday, zone, time));
-		return A2($author$project$Main$rollbackDays, intWeekday, time);
-	});
 var $mdgriffith$elm_ui$Internal$Model$OnlyDynamic = F2(
 	function (a, b) {
 		return {$: 'OnlyDynamic', a: a, b: b};
@@ -18750,9 +18510,224 @@ var $danmarcab$material_icons$Material$Icons$Toggle$check_box = A2(
 				]),
 			_List_Nil)
 		]));
+var $elm$time$Time$flooredDiv = F2(
+	function (numerator, denominator) {
+		return $elm$core$Basics$floor(numerator / denominator);
+	});
+var $elm$time$Time$posixToMillis = function (_v0) {
+	var millis = _v0.a;
+	return millis;
+};
+var $elm$time$Time$toAdjustedMinutesHelp = F3(
+	function (defaultOffset, posixMinutes, eras) {
+		toAdjustedMinutesHelp:
+		while (true) {
+			if (!eras.b) {
+				return posixMinutes + defaultOffset;
+			} else {
+				var era = eras.a;
+				var olderEras = eras.b;
+				if (_Utils_cmp(era.start, posixMinutes) < 0) {
+					return posixMinutes + era.offset;
+				} else {
+					var $temp$defaultOffset = defaultOffset,
+						$temp$posixMinutes = posixMinutes,
+						$temp$eras = olderEras;
+					defaultOffset = $temp$defaultOffset;
+					posixMinutes = $temp$posixMinutes;
+					eras = $temp$eras;
+					continue toAdjustedMinutesHelp;
+				}
+			}
+		}
+	});
+var $elm$time$Time$toAdjustedMinutes = F2(
+	function (_v0, time) {
+		var defaultOffset = _v0.a;
+		var eras = _v0.b;
+		return A3(
+			$elm$time$Time$toAdjustedMinutesHelp,
+			defaultOffset,
+			A2(
+				$elm$time$Time$flooredDiv,
+				$elm$time$Time$posixToMillis(time),
+				60000),
+			eras);
+	});
+var $elm$time$Time$toCivil = function (minutes) {
+	var rawDay = A2($elm$time$Time$flooredDiv, minutes, 60 * 24) + 719468;
+	var era = (((rawDay >= 0) ? rawDay : (rawDay - 146096)) / 146097) | 0;
+	var dayOfEra = rawDay - (era * 146097);
+	var yearOfEra = ((((dayOfEra - ((dayOfEra / 1460) | 0)) + ((dayOfEra / 36524) | 0)) - ((dayOfEra / 146096) | 0)) / 365) | 0;
+	var dayOfYear = dayOfEra - (((365 * yearOfEra) + ((yearOfEra / 4) | 0)) - ((yearOfEra / 100) | 0));
+	var mp = (((5 * dayOfYear) + 2) / 153) | 0;
+	var month = mp + ((mp < 10) ? 3 : (-9));
+	var year = yearOfEra + (era * 400);
+	return {
+		day: (dayOfYear - ((((153 * mp) + 2) / 5) | 0)) + 1,
+		month: month,
+		year: year + ((month <= 2) ? 1 : 0)
+	};
+};
+var $elm$time$Time$toDay = F2(
+	function (zone, time) {
+		return $elm$time$Time$toCivil(
+			A2($elm$time$Time$toAdjustedMinutes, zone, time)).day;
+	});
+var $author$project$Main$toDutchMonthNumber = function (month) {
+	switch (month.$) {
+		case 'Jan':
+			return '01';
+		case 'Feb':
+			return '02';
+		case 'Mar':
+			return '03';
+		case 'Apr':
+			return '04';
+		case 'May':
+			return '05';
+		case 'Jun':
+			return '06';
+		case 'Jul':
+			return '07';
+		case 'Aug':
+			return '08';
+		case 'Sep':
+			return '09';
+		case 'Oct':
+			return '10';
+		case 'Nov':
+			return '11';
+		default:
+			return '12';
+	}
+};
+var $author$project$Main$toDutchWeekday = function (day) {
+	switch (day.$) {
+		case 'Mon':
+			return 'Maandag';
+		case 'Tue':
+			return 'Dinsdag';
+		case 'Wed':
+			return 'Woensdag';
+		case 'Thu':
+			return 'Donderdag';
+		case 'Fri':
+			return 'Vrijdag';
+		case 'Sat':
+			return 'Zaterdag';
+		default:
+			return 'Zondag';
+	}
+};
+var $elm$core$Basics$modBy = _Basics_modBy;
+var $elm$time$Time$toHour = F2(
+	function (zone, time) {
+		return A2(
+			$elm$core$Basics$modBy,
+			24,
+			A2(
+				$elm$time$Time$flooredDiv,
+				A2($elm$time$Time$toAdjustedMinutes, zone, time),
+				60));
+	});
+var $elm$time$Time$toMinute = F2(
+	function (zone, time) {
+		return A2(
+			$elm$core$Basics$modBy,
+			60,
+			A2($elm$time$Time$toAdjustedMinutes, zone, time));
+	});
+var $elm$time$Time$Apr = {$: 'Apr'};
+var $elm$time$Time$Aug = {$: 'Aug'};
+var $elm$time$Time$Dec = {$: 'Dec'};
+var $elm$time$Time$Feb = {$: 'Feb'};
+var $elm$time$Time$Jan = {$: 'Jan'};
+var $elm$time$Time$Jul = {$: 'Jul'};
+var $elm$time$Time$Jun = {$: 'Jun'};
+var $elm$time$Time$Mar = {$: 'Mar'};
+var $elm$time$Time$May = {$: 'May'};
+var $elm$time$Time$Nov = {$: 'Nov'};
+var $elm$time$Time$Oct = {$: 'Oct'};
+var $elm$time$Time$Sep = {$: 'Sep'};
+var $elm$time$Time$toMonth = F2(
+	function (zone, time) {
+		var _v0 = $elm$time$Time$toCivil(
+			A2($elm$time$Time$toAdjustedMinutes, zone, time)).month;
+		switch (_v0) {
+			case 1:
+				return $elm$time$Time$Jan;
+			case 2:
+				return $elm$time$Time$Feb;
+			case 3:
+				return $elm$time$Time$Mar;
+			case 4:
+				return $elm$time$Time$Apr;
+			case 5:
+				return $elm$time$Time$May;
+			case 6:
+				return $elm$time$Time$Jun;
+			case 7:
+				return $elm$time$Time$Jul;
+			case 8:
+				return $elm$time$Time$Aug;
+			case 9:
+				return $elm$time$Time$Sep;
+			case 10:
+				return $elm$time$Time$Oct;
+			case 11:
+				return $elm$time$Time$Nov;
+			default:
+				return $elm$time$Time$Dec;
+		}
+	});
+var $author$project$Main$toTwoDigits = function (i) {
+	return (i < 10) ? ('0' + $elm$core$String$fromInt(i)) : $elm$core$String$fromInt(i);
+};
+var $elm$time$Time$Fri = {$: 'Fri'};
+var $elm$time$Time$Mon = {$: 'Mon'};
+var $elm$time$Time$Sat = {$: 'Sat'};
+var $elm$time$Time$Sun = {$: 'Sun'};
+var $elm$time$Time$Thu = {$: 'Thu'};
+var $elm$time$Time$Tue = {$: 'Tue'};
+var $elm$time$Time$Wed = {$: 'Wed'};
+var $elm$time$Time$toWeekday = F2(
+	function (zone, time) {
+		var _v0 = A2(
+			$elm$core$Basics$modBy,
+			7,
+			A2(
+				$elm$time$Time$flooredDiv,
+				A2($elm$time$Time$toAdjustedMinutes, zone, time),
+				60 * 24));
+		switch (_v0) {
+			case 0:
+				return $elm$time$Time$Thu;
+			case 1:
+				return $elm$time$Time$Fri;
+			case 2:
+				return $elm$time$Time$Sat;
+			case 3:
+				return $elm$time$Time$Sun;
+			case 4:
+				return $elm$time$Time$Mon;
+			case 5:
+				return $elm$time$Time$Tue;
+			default:
+				return $elm$time$Time$Wed;
+		}
+	});
+var $author$project$Main$dateToHumanStr = F2(
+	function (zone, posix) {
+		return $author$project$Main$toDutchWeekday(
+			A2($elm$time$Time$toWeekday, zone, posix)) + (' ' + ($author$project$Main$toTwoDigits(
+			A2($elm$time$Time$toDay, zone, posix)) + ('/' + ($author$project$Main$toDutchMonthNumber(
+			A2($elm$time$Time$toMonth, zone, posix)) + ('\n' + ($elm$core$String$fromInt(
+			A2($elm$time$Time$toHour, zone, posix)) + (':' + $author$project$Main$toTwoDigits(
+			A2($elm$time$Time$toMinute, zone, posix)))))))));
+	});
 var $mdgriffith$elm_ui$Element$Font$italic = $mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.italic);
 var $avh4$elm_color$Color$lightGreen = A4($avh4$elm_color$Color$RgbaSpace, 138 / 255, 226 / 255, 52 / 255, 1.0);
-var $elm$core$Debug$log = _Debug_log;
 var $danmarcab$material_icons$Material$Icons$Toggle$radio_button_unchecked = A2(
 	$danmarcab$material_icons$Material$Icons$Internal$icon,
 	'0 0 48 48',
@@ -18831,8 +18806,6 @@ var $author$project$Main$viewSubTasks = F2(
 	});
 var $author$project$Main$viewCalls = F3(
 	function (calls, subtasks, options) {
-		var zone = options.timeZone;
-		var today = options.today;
 		var sortedCalls = A2(
 			$elm$core$List$sortWith,
 			F2(
@@ -18842,25 +18815,6 @@ var $author$project$Main$viewCalls = F3(
 						$elm$time$Time$posixToMillis(b.when)) > 0) ? $elm$core$Basics$LT : $elm$core$Basics$GT;
 				}),
 			calls);
-		var lastMonday = A2(
-			$elm$core$Debug$log,
-			'last monday ',
-			$elm$time$Time$posixToMillis(
-				A2($author$project$Main$lastMondayBeforeDate, zone, today)));
-		var callsToday = A2(
-			$elm$core$List$filter,
-			function (call) {
-				return _Utils_eq(
-					A2($elm$time$Time$toDay, zone, call.when),
-					A2($elm$time$Time$toDay, zone, today));
-			},
-			sortedCalls);
-		var callsEarlierThisWeek = A2(
-			$elm$core$List$filter,
-			function (call) {
-				return true;
-			},
-			sortedCalls);
 		return A2(
 			$elm$core$List$map,
 			function (call) {
@@ -19227,6 +19181,145 @@ var $author$project$Main$viewSearchCalls = function (model) {
 					{archived: true, timeZone: model.timeZone, today: model.today}))
 			])) : $mdgriffith$elm_ui$Element$none;
 };
+var $waratuman$time_extra$Time$Extra$setHour = F3(
+	function (z, h, t) {
+		var t_ = $elm$time$Time$posixToMillis(t);
+		var h_ = A2($elm$core$Basics$modBy, 24, h);
+		var diff = (h_ - A2($elm$time$Time$toHour, z, t)) * 3600000;
+		return $elm$time$Time$millisToPosix(t_ + diff);
+	});
+var $elm$time$Time$toMillis = F2(
+	function (_v0, time) {
+		return A2(
+			$elm$core$Basics$modBy,
+			1000,
+			$elm$time$Time$posixToMillis(time));
+	});
+var $waratuman$time_extra$Time$Extra$setMillis = F3(
+	function (z, m, t) {
+		var t_ = $elm$time$Time$posixToMillis(t);
+		var m_ = m % 1000;
+		var diff = m_ - A2($elm$time$Time$toMillis, z, t);
+		return $elm$time$Time$millisToPosix(t_ + diff);
+	});
+var $waratuman$time_extra$Time$Extra$setMinute = F3(
+	function (z, m, t) {
+		var t_ = $elm$time$Time$posixToMillis(t);
+		var m_ = A2($elm$core$Basics$modBy, 60, m);
+		var diff = (m_ - A2($elm$time$Time$toMinute, z, t)) * 60000;
+		return $elm$time$Time$millisToPosix(t_ + diff);
+	});
+var $elm$time$Time$toSecond = F2(
+	function (_v0, time) {
+		return A2(
+			$elm$core$Basics$modBy,
+			60,
+			A2(
+				$elm$time$Time$flooredDiv,
+				$elm$time$Time$posixToMillis(time),
+				1000));
+	});
+var $waratuman$time_extra$Time$Extra$setSecond = F3(
+	function (z, s, t) {
+		var t_ = $elm$time$Time$posixToMillis(t);
+		var s_ = A2($elm$core$Basics$modBy, 60, s);
+		var diff = (s_ - A2($elm$time$Time$toSecond, z, t)) * 1000;
+		return $elm$time$Time$millisToPosix(t_ + diff);
+	});
+var $waratuman$time_extra$Time$Extra$startOfDay = F2(
+	function (z, d) {
+		return A3(
+			$waratuman$time_extra$Time$Extra$setMillis,
+			z,
+			0,
+			A3(
+				$waratuman$time_extra$Time$Extra$setSecond,
+				z,
+				0,
+				A3(
+					$waratuman$time_extra$Time$Extra$setMinute,
+					z,
+					0,
+					A3($waratuman$time_extra$Time$Extra$setHour, z, 0, d))));
+	});
+var $waratuman$time_extra$Time$Extra$msPerDay = 86400000;
+var $waratuman$time_extra$Time$Extra$weekdayToInt = function (d) {
+	switch (d.$) {
+		case 'Mon':
+			return 1;
+		case 'Tue':
+			return 2;
+		case 'Wed':
+			return 3;
+		case 'Thu':
+			return 4;
+		case 'Fri':
+			return 5;
+		case 'Sat':
+			return 6;
+		default:
+			return 7;
+	}
+};
+var $waratuman$time_extra$Time$Extra$startOfWeek = F3(
+	function (z, startingWeekday, t) {
+		var t_ = $elm$time$Time$posixToMillis(
+			A2($waratuman$time_extra$Time$Extra$startOfDay, z, t));
+		var d_ = $waratuman$time_extra$Time$Extra$weekdayToInt(
+			A2($elm$time$Time$toWeekday, z, t));
+		var diff = A2(
+			$elm$core$Basics$modBy,
+			7,
+			d_ - $waratuman$time_extra$Time$Extra$weekdayToInt(startingWeekday)) * $waratuman$time_extra$Time$Extra$msPerDay;
+		return $elm$time$Time$millisToPosix(t_ - diff);
+	});
+var $author$project$Main$filterCallsBeforeThisWeek = F3(
+	function (calls, zone, today) {
+		var startOfWeekInt = $elm$time$Time$posixToMillis(
+			A2(
+				$waratuman$time_extra$Time$Extra$startOfDay,
+				zone,
+				A3($waratuman$time_extra$Time$Extra$startOfWeek, zone, $elm$time$Time$Mon, today)));
+		return A2(
+			$elm$core$List$filter,
+			function (call) {
+				var startOfCallDayInt = $elm$time$Time$posixToMillis(
+					A2($waratuman$time_extra$Time$Extra$startOfDay, zone, call.when));
+				return _Utils_cmp(startOfWeekInt, startOfCallDayInt) > 0;
+			},
+			calls);
+	});
+var $author$project$Main$filterCallsFromDay = F3(
+	function (calls, zone, day) {
+		return A2(
+			$elm$core$List$filter,
+			function (call) {
+				return _Utils_eq(
+					$elm$time$Time$posixToMillis(
+						A2($waratuman$time_extra$Time$Extra$startOfDay, zone, day)),
+					$elm$time$Time$posixToMillis(
+						A2($waratuman$time_extra$Time$Extra$startOfDay, zone, call.when)));
+			},
+			calls);
+	});
+var $author$project$Main$filterCallsFromThisWeekButNotToday = F3(
+	function (calls, zone, today) {
+		var startOfWeekInt = $elm$time$Time$posixToMillis(
+			A2(
+				$waratuman$time_extra$Time$Extra$startOfDay,
+				zone,
+				A3($waratuman$time_extra$Time$Extra$startOfWeek, zone, $elm$time$Time$Mon, today)));
+		var startOfTodayInt = $elm$time$Time$posixToMillis(
+			A2($waratuman$time_extra$Time$Extra$startOfDay, zone, today));
+		return A2(
+			$elm$core$List$filter,
+			function (call) {
+				var startOfCallDayInt = $elm$time$Time$posixToMillis(
+					A2($waratuman$time_extra$Time$Extra$startOfDay, zone, call.when));
+				return (_Utils_cmp(startOfCallDayInt, startOfWeekInt) > -1) && (_Utils_cmp(startOfCallDayInt, startOfTodayInt) < 0);
+			},
+			calls);
+	});
 var $author$project$Main$viewUnarchivedCalls = function (model) {
 	return ($elm$core$List$length(model.calls) > 0) ? A2(
 		$mdgriffith$elm_ui$Element$column,
@@ -19243,12 +19336,31 @@ var $author$project$Main$viewUnarchivedCalls = function (model) {
 						$mdgriffith$elm_ui$Element$Font$bold
 					]),
 				$mdgriffith$elm_ui$Element$text('Gesprekken / todo\'s')),
+				$mdgriffith$elm_ui$Element$text('Vandaag'),
 				A2(
 				$mdgriffith$elm_ui$Element$column,
 				_List_Nil,
 				A3(
 					$author$project$Main$viewCalls,
-					model.calls,
+					A3($author$project$Main$filterCallsFromDay, model.calls, model.timeZone, model.today),
+					model.subTasks,
+					{archived: false, timeZone: model.timeZone, today: model.today})),
+				$mdgriffith$elm_ui$Element$text('Eerder deze week'),
+				A2(
+				$mdgriffith$elm_ui$Element$column,
+				_List_Nil,
+				A3(
+					$author$project$Main$viewCalls,
+					A3($author$project$Main$filterCallsFromThisWeekButNotToday, model.calls, model.timeZone, model.today),
+					model.subTasks,
+					{archived: false, timeZone: model.timeZone, today: model.today})),
+				$mdgriffith$elm_ui$Element$text('Lang geleden...'),
+				A2(
+				$mdgriffith$elm_ui$Element$column,
+				_List_Nil,
+				A3(
+					$author$project$Main$viewCalls,
+					A3($author$project$Main$filterCallsBeforeThisWeek, model.calls, model.timeZone, model.today),
 					model.subTasks,
 					{archived: false, timeZone: model.timeZone, today: model.today}))
 			])) : $mdgriffith$elm_ui$Element$none;
@@ -19385,11 +19497,6 @@ var $author$project$Main$view = function (model) {
 								text: model.inputSearch
 							})
 						])),
-					$mdgriffith$elm_ui$Element$text(
-					A2(
-						$author$project$Main$dateToHumanStr,
-						model.timeZone,
-						A2($author$project$Main$lastMondayBeforeDate, model.timeZone, model.today))),
 					(model.inputSearch === '') ? $author$project$Main$viewUnarchivedCalls(model) : $mdgriffith$elm_ui$Element$none,
 					(model.inputSearch === '') ? $author$project$Main$viewArchivedCalls(model) : $mdgriffith$elm_ui$Element$none,
 					(model.inputSearch !== '') ? $author$project$Main$viewSearchCalls(model) : $mdgriffith$elm_ui$Element$none
