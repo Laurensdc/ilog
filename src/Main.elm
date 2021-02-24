@@ -172,7 +172,7 @@ update msg model =
                              , when = time
                              }
                            ]
-                , subTasks = List.map (\subTask -> { subTask | callId = newCallId }) model.preSaveSubTasks
+                , subTasks = model.subTasks ++ List.map (\subTask -> { subTask | callId = newCallId }) model.preSaveSubTasks
                 , preSaveSubTasks = []
                 , inputWho = ""
                 , inputComments = ""
