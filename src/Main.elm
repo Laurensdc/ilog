@@ -31,11 +31,11 @@ import Widget.Material.Color
 
 main : Program () Model Msg
 main =
-    Browser.element
+    Browser.document
         { init = init
         , update = update
         , subscriptions = subscriptions
-        , view = view
+        , view = viewDocument
         }
 
 
@@ -62,24 +62,24 @@ type alias Model =
 dummyCalls : List Call
 dummyCalls =
     [ { id = FromBackend 1
-      , who = "Jan van Carrefour"
+      , who = "Woe 24/02 19:24"
       , comments = "Nog bellen naar labo enal, kwenie"
-      , when = Time.millisToPosix 1614187125166
+      , when = Time.millisToPosix 1614191035000
       }
     , { id = FromBackend 2
-      , who = "Eva / Beyond Meat"
+      , who = "23/02 03:23"
       , comments = "Wa een tang"
-      , when = Time.millisToPosix 1614027125166
+      , when = Time.millisToPosix 1614093833000
       }
     , { id = FromBackend 3
-      , who = "AAAAt"
+      , who = "22/02 03:23"
       , comments = "Wdddd een tang"
-      , when = Time.millisToPosix 1613527125166
+      , when = Time.millisToPosix 1614007433000
       }
     , { id = FromBackend 4
-      , who = "BBBBBBBBt"
+      , who = "21/02"
       , comments = "Ik ben epic"
-      , when = Time.millisToPosix 1613527125166
+      , when = Time.millisToPosix 1613921033000
       }
     , { id = FromBackend 5
       , who = "Dinsdag 23/02 22:33?"
@@ -304,6 +304,11 @@ toggleSubTask subTask =
 -- VIEW
 
 
+viewDocument : Model -> Browser.Document Msg
+viewDocument model =
+    { title = "📝 ILog", body = [ view model ] }
+
+
 view : Model -> Html.Html Msg
 view model =
     let
@@ -488,20 +493,57 @@ viewSearchCalls model =
 
 viewUnarchivedCalls : Model -> Ui.Element Msg
 viewUnarchivedCalls model =
+    let
+        topPadding =
+            Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 }
+
+        callsToday =
+            viewCalls (filterCallsFromDay model.calls model.timeZone model.today)
+                model.subTasks
+                { archived = False, timeZone = model.timeZone, today = model.today }
+
+        callsThisWeek =
+            viewCalls (filterCallsFromThisWeekButNotToday model.calls model.timeZone model.today)
+                model.subTasks
+                { archived = False, timeZone = model.timeZone, today = model.today }
+
+        callsBeforeThisWeek =
+            viewCalls (filterCallsBeforeThisWeek model.calls model.timeZone model.today)
+                model.subTasks
+                { archived = False, timeZone = model.timeZone, today = model.today }
+    in
     if List.length model.calls > 0 then
         Ui.column []
             [ Ui.el
-                [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 }
+                [ topPadding
                 , Font.size 24
                 , Font.bold
                 ]
                 (Ui.text "Gesprekken / todo's")
-            , Ui.text "Vandaag"
-            , Ui.column [] <| viewCalls (filterCallsFromDay model.calls model.timeZone model.today) model.subTasks { archived = False, timeZone = model.timeZone, today = model.today }
-            , Ui.text "Eerder deze week"
-            , Ui.column [] <| viewCalls (filterCallsFromThisWeekButNotToday model.calls model.timeZone model.today) model.subTasks { archived = False, timeZone = model.timeZone, today = model.today }
-            , Ui.text "Lang geleden..."
-            , Ui.column [] <| viewCalls (filterCallsBeforeThisWeek model.calls model.timeZone model.today) model.subTasks { archived = False, timeZone = model.timeZone, today = model.today }
+
+            -- Today
+            , if List.length callsToday > 0 then
+                Ui.el [ Font.italic, topPadding ] (Ui.text "Vandaag")
+
+              else
+                Ui.none
+            , Ui.column [] <| callsToday
+
+            -- Week
+            , if List.length callsThisWeek > 0 then
+                Ui.el [ Font.italic, topPadding ] (Ui.text "Eerder deze week")
+
+              else
+                Ui.none
+            , Ui.column [] <| callsThisWeek
+
+            -- Before that
+            , if List.length callsBeforeThisWeek > 0 then
+                Ui.el [ Font.italic, topPadding ] (Ui.text "Heel erg lang geleden...")
+
+              else
+                Ui.none
+            , Ui.column [] <| callsBeforeThisWeek
             ]
 
     else
@@ -526,50 +568,6 @@ viewArchivedCalls model =
 
     else
         Ui.none
-
-
-filterCallsFromDay : List Call -> Time.Zone -> Time.Posix -> List Call
-filterCallsFromDay calls zone day =
-    List.filter
-        (\call -> Time.posixToMillis (Time.startOfDay zone day) == Time.posixToMillis (Time.startOfDay zone call.when))
-        calls
-
-
-filterCallsFromThisWeekButNotToday : List Call -> Time.Zone -> Time.Posix -> List Call
-filterCallsFromThisWeekButNotToday calls zone today =
-    let
-        startOfWeekInt =
-            Time.posixToMillis <| Time.startOfDay zone <| Time.startOfWeek zone Time.Mon today
-
-        startOfTodayInt =
-            Time.posixToMillis <| Time.startOfDay zone today
-    in
-    List.filter
-        (\call ->
-            let
-                startOfCallDayInt =
-                    Time.posixToMillis <| Time.startOfDay zone call.when
-            in
-            (startOfCallDayInt >= startOfWeekInt) && (startOfCallDayInt < startOfTodayInt)
-        )
-        calls
-
-
-filterCallsBeforeThisWeek : List Call -> Time.Zone -> Time.Posix -> List Call
-filterCallsBeforeThisWeek calls zone today =
-    let
-        startOfWeekInt =
-            Time.posixToMillis <| Time.startOfDay zone <| Time.startOfWeek zone Time.Mon today
-    in
-    List.filter
-        (\call ->
-            let
-                startOfCallDayInt =
-                    Time.posixToMillis <| Time.startOfDay zone call.when
-            in
-            startOfWeekInt > startOfCallDayInt
-        )
-        calls
 
 
 viewCalls : List Call -> List SubTask -> { archived : Bool, timeZone : Time.Zone, today : Time.Posix } -> List (Ui.Element Msg)
@@ -706,6 +704,50 @@ toTwoDigits i =
 
 
 -- TIME STUFF
+
+
+filterCallsFromDay : List Call -> Time.Zone -> Time.Posix -> List Call
+filterCallsFromDay calls zone day =
+    List.filter
+        (\call -> Time.posixToMillis (Time.startOfDay zone day) == Time.posixToMillis (Time.startOfDay zone call.when))
+        calls
+
+
+filterCallsFromThisWeekButNotToday : List Call -> Time.Zone -> Time.Posix -> List Call
+filterCallsFromThisWeekButNotToday calls zone today =
+    let
+        startOfWeekInt =
+            Time.posixToMillis <| Time.startOfDay zone <| Time.startOfWeek zone Time.Mon today
+
+        startOfTodayInt =
+            Time.posixToMillis <| Time.startOfDay zone today
+    in
+    List.filter
+        (\call ->
+            let
+                startOfCallDayInt =
+                    Time.posixToMillis <| Time.startOfDay zone call.when
+            in
+            (startOfCallDayInt >= startOfWeekInt) && (startOfCallDayInt < startOfTodayInt)
+        )
+        calls
+
+
+filterCallsBeforeThisWeek : List Call -> Time.Zone -> Time.Posix -> List Call
+filterCallsBeforeThisWeek calls zone today =
+    let
+        startOfWeekInt =
+            Time.posixToMillis <| Time.startOfDay zone <| Time.startOfWeek zone Time.Mon today
+    in
+    List.filter
+        (\call ->
+            let
+                startOfCallDayInt =
+                    Time.posixToMillis <| Time.startOfDay zone call.when
+            in
+            startOfWeekInt > startOfCallDayInt
+        )
+        calls
 
 
 rollbackDays : Int -> Time.Posix -> Time.Posix

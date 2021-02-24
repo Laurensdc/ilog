@@ -10595,7 +10595,7 @@ var $elm$core$Basics$never = function (_v0) {
 		continue never;
 	}
 };
-var $elm$browser$Browser$element = _Browser_element;
+var $elm$browser$Browser$document = _Browser_document;
 var $author$project$Main$GetTimeZone = function (a) {
 	return {$: 'GetTimeZone', a: a};
 };
@@ -10614,26 +10614,26 @@ var $author$project$Main$dummyCalls = _List_fromArray(
 		{
 		comments: 'Nog bellen naar labo enal, kwenie',
 		id: $author$project$Main$FromBackend(1),
-		when: $elm$time$Time$millisToPosix(1614187125166),
-		who: 'Jan van Carrefour'
+		when: $elm$time$Time$millisToPosix(1614191035000),
+		who: 'Woe 24/02 19:24'
 	},
 		{
 		comments: 'Wa een tang',
 		id: $author$project$Main$FromBackend(2),
-		when: $elm$time$Time$millisToPosix(1614027125166),
-		who: 'Eva / Beyond Meat'
+		when: $elm$time$Time$millisToPosix(1614093833000),
+		who: '23/02 03:23'
 	},
 		{
 		comments: 'Wdddd een tang',
 		id: $author$project$Main$FromBackend(3),
-		when: $elm$time$Time$millisToPosix(1613527125166),
-		who: 'AAAAt'
+		when: $elm$time$Time$millisToPosix(1614007433000),
+		who: '22/02 03:23'
 	},
 		{
 		comments: 'Ik ben epic',
 		id: $author$project$Main$FromBackend(4),
-		when: $elm$time$Time$millisToPosix(1613527125166),
-		who: 'BBBBBBBBt'
+		when: $elm$time$Time$millisToPosix(1613921033000),
+		who: '21/02'
 	},
 		{
 		comments: 'Soep',
@@ -19321,6 +19321,23 @@ var $author$project$Main$filterCallsFromThisWeekButNotToday = F3(
 			calls);
 	});
 var $author$project$Main$viewUnarchivedCalls = function (model) {
+	var topPadding = $mdgriffith$elm_ui$Element$paddingEach(
+		{bottom: 0, left: 0, right: 0, top: 16});
+	var callsToday = A3(
+		$author$project$Main$viewCalls,
+		A3($author$project$Main$filterCallsFromDay, model.calls, model.timeZone, model.today),
+		model.subTasks,
+		{archived: false, timeZone: model.timeZone, today: model.today});
+	var callsThisWeek = A3(
+		$author$project$Main$viewCalls,
+		A3($author$project$Main$filterCallsFromThisWeekButNotToday, model.calls, model.timeZone, model.today),
+		model.subTasks,
+		{archived: false, timeZone: model.timeZone, today: model.today});
+	var callsBeforeThisWeek = A3(
+		$author$project$Main$viewCalls,
+		A3($author$project$Main$filterCallsBeforeThisWeek, model.calls, model.timeZone, model.today),
+		model.subTasks,
+		{archived: false, timeZone: model.timeZone, today: model.today});
 	return ($elm$core$List$length(model.calls) > 0) ? A2(
 		$mdgriffith$elm_ui$Element$column,
 		_List_Nil,
@@ -19330,39 +19347,29 @@ var $author$project$Main$viewUnarchivedCalls = function (model) {
 				$mdgriffith$elm_ui$Element$el,
 				_List_fromArray(
 					[
-						$mdgriffith$elm_ui$Element$paddingEach(
-						{bottom: 0, left: 0, right: 0, top: 16}),
+						topPadding,
 						$mdgriffith$elm_ui$Element$Font$size(24),
 						$mdgriffith$elm_ui$Element$Font$bold
 					]),
 				$mdgriffith$elm_ui$Element$text('Gesprekken / todo\'s')),
-				$mdgriffith$elm_ui$Element$text('Vandaag'),
-				A2(
-				$mdgriffith$elm_ui$Element$column,
-				_List_Nil,
-				A3(
-					$author$project$Main$viewCalls,
-					A3($author$project$Main$filterCallsFromDay, model.calls, model.timeZone, model.today),
-					model.subTasks,
-					{archived: false, timeZone: model.timeZone, today: model.today})),
-				$mdgriffith$elm_ui$Element$text('Eerder deze week'),
-				A2(
-				$mdgriffith$elm_ui$Element$column,
-				_List_Nil,
-				A3(
-					$author$project$Main$viewCalls,
-					A3($author$project$Main$filterCallsFromThisWeekButNotToday, model.calls, model.timeZone, model.today),
-					model.subTasks,
-					{archived: false, timeZone: model.timeZone, today: model.today})),
-				$mdgriffith$elm_ui$Element$text('Lang geleden...'),
-				A2(
-				$mdgriffith$elm_ui$Element$column,
-				_List_Nil,
-				A3(
-					$author$project$Main$viewCalls,
-					A3($author$project$Main$filterCallsBeforeThisWeek, model.calls, model.timeZone, model.today),
-					model.subTasks,
-					{archived: false, timeZone: model.timeZone, today: model.today}))
+				($elm$core$List$length(callsToday) > 0) ? A2(
+				$mdgriffith$elm_ui$Element$el,
+				_List_fromArray(
+					[$mdgriffith$elm_ui$Element$Font$italic, topPadding]),
+				$mdgriffith$elm_ui$Element$text('Vandaag')) : $mdgriffith$elm_ui$Element$none,
+				A2($mdgriffith$elm_ui$Element$column, _List_Nil, callsToday),
+				($elm$core$List$length(callsThisWeek) > 0) ? A2(
+				$mdgriffith$elm_ui$Element$el,
+				_List_fromArray(
+					[$mdgriffith$elm_ui$Element$Font$italic, topPadding]),
+				$mdgriffith$elm_ui$Element$text('Eerder deze week')) : $mdgriffith$elm_ui$Element$none,
+				A2($mdgriffith$elm_ui$Element$column, _List_Nil, callsThisWeek),
+				($elm$core$List$length(callsBeforeThisWeek) > 0) ? A2(
+				$mdgriffith$elm_ui$Element$el,
+				_List_fromArray(
+					[$mdgriffith$elm_ui$Element$Font$italic, topPadding]),
+				$mdgriffith$elm_ui$Element$text('Heel erg lang geleden...')) : $mdgriffith$elm_ui$Element$none,
+				A2($mdgriffith$elm_ui$Element$column, _List_Nil, callsBeforeThisWeek)
 			])) : $mdgriffith$elm_ui$Element$none;
 };
 var $avh4$elm_color$Color$white = A4($avh4$elm_color$Color$RgbaSpace, 255 / 255, 255 / 255, 255 / 255, 1.0);
@@ -19502,8 +19509,17 @@ var $author$project$Main$view = function (model) {
 					(model.inputSearch !== '') ? $author$project$Main$viewSearchCalls(model) : $mdgriffith$elm_ui$Element$none
 				])));
 };
-var $author$project$Main$main = $elm$browser$Browser$element(
-	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$view});
+var $author$project$Main$viewDocument = function (model) {
+	return {
+		body: _List_fromArray(
+			[
+				$author$project$Main$view(model)
+			]),
+		title: '📝 ILog'
+	};
+};
+var $author$project$Main$main = $elm$browser$Browser$document(
+	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$viewDocument});
 _Platform_export({'Main':{'init':$author$project$Main$main(
 	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.Call":{"args":[],"type":"{ id : Main.CallId, who : String.String, comments : String.String, when : Time.Posix }"},"Main.SubTask":{"args":[],"type":"{ callId : Main.CallId, text : String.String, done : Basics.Bool }"},"Time.Era":{"args":[],"type":"{ start : Basics.Int, offset : Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"InputWhoChanged":["String.String"],"InputCommentsChanged":["String.String"],"InputSubTaskChanged":["String.String"],"InputSearchChanged":["String.String"],"AddPreSaveSubTask":[],"AddCall":[],"AddCallWithTime":["Time.Posix"],"DeletePreSaveSubTask":["Main.SubTask"],"ToggleSubTask":["Main.SubTask"],"ArchiveCall":["Main.Call"],"OpenForm":[],"CloseForm":[],"GetTimeZone":["Time.Zone"],"SetToday":["Time.Posix"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Main.CallId":{"args":[],"tags":{"Creating":[],"FromBackend":["Basics.Int"]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"String.String":{"args":[],"tags":{"String":[]}},"Time.Zone":{"args":[],"tags":{"Zone":["Basics.Int","List.List Time.Era"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}}}}})}});}(this));
 
