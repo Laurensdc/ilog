@@ -1,4 +1,4 @@
-module Main exposing (..)
+port module Main exposing (..)
 
 import Browser
 import Color
@@ -113,7 +113,8 @@ init _ =
       , timeZone = Time.utc
       , today = Time.millisToPosix 0
       }
-    , Cmd.batch [ Task.perform GetTimeZone Time.here, Task.perform SetToday Time.now ]
+    , Cmd.batch
+        [ Task.perform GetTimeZone Time.here, Task.perform SetToday Time.now ]
     )
 
 
@@ -135,6 +136,16 @@ type CallId
 
 
 
+-- PORTS
+
+
+port sendMessage : String -> Cmd msg
+
+
+port receiveMessage : (Int -> msg) -> Sub msg
+
+
+
 -- UPDATE
 
 
@@ -153,6 +164,7 @@ type Msg
     | CloseForm
     | GetTimeZone Time.Zone
     | SetToday Time.Posix
+    | Receive Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -257,10 +269,13 @@ update msg model =
             )
 
         OpenForm ->
-            ( { model | formVisible = True }, Cmd.none )
+            ( { model | formVisible = True }, sendMessage "Test" )
 
         CloseForm ->
             ( { model | formVisible = False }, Cmd.none )
+
+        Receive txt ->
+            ( { model | inputComments = String.fromInt txt }, Cmd.none )
 
 
 {-| Checks calls for highest value of id.
@@ -929,7 +944,7 @@ toDutchWeekday day =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.none
+    receiveMessage Receive
 
 
 type AppColor

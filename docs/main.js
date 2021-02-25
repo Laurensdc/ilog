@@ -10688,10 +10688,12 @@ var $author$project$Main$init = function (_v0) {
 					A2($elm$core$Task$perform, $author$project$Main$SetToday, $elm$time$Time$now)
 				])));
 };
-var $elm$core$Platform$Sub$batch = _Platform_batch;
-var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
+var $author$project$Main$Receive = function (a) {
+	return {$: 'Receive', a: a};
+};
+var $author$project$Main$receiveMessage = _Platform_incomingPort('receiveMessage', $elm$json$Json$Decode$int);
 var $author$project$Main$subscriptions = function (_v0) {
-	return $elm$core$Platform$Sub$none;
+	return $author$project$Main$receiveMessage($author$project$Main$Receive);
 };
 var $author$project$Main$AddCallWithTime = function (a) {
 	return {$: 'AddCallWithTime', a: a};
@@ -10769,6 +10771,7 @@ var $elm$core$List$member = F2(
 			},
 			xs);
 	});
+var $author$project$Main$sendMessage = _Platform_outgoingPort('sendMessage', $elm$json$Json$Encode$string);
 var $author$project$Main$toggleSubTask = function (subTask) {
 	return _Utils_update(
 		subTask,
@@ -10919,12 +10922,21 @@ var $author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{formVisible: true}),
-					$elm$core$Platform$Cmd$none);
-			default:
+					$author$project$Main$sendMessage('Test'));
+			case 'CloseForm':
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{formVisible: false}),
+					$elm$core$Platform$Cmd$none);
+			default:
+				var txt = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							inputComments: $elm$core$String$fromInt(txt)
+						}),
 					$elm$core$Platform$Cmd$none);
 		}
 	});
@@ -19507,4 +19519,4 @@ var $author$project$Main$viewDocument = function (model) {
 var $author$project$Main$main = $elm$browser$Browser$document(
 	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$viewDocument});
 _Platform_export({'Main':{'init':$author$project$Main$main(
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.Call":{"args":[],"type":"{ id : Main.CallId, who : String.String, comments : String.String, when : Time.Posix }"},"Main.SubTask":{"args":[],"type":"{ callId : Main.CallId, text : String.String, done : Basics.Bool }"},"Time.Era":{"args":[],"type":"{ start : Basics.Int, offset : Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"InputWhoChanged":["String.String"],"InputCommentsChanged":["String.String"],"InputSubTaskChanged":["String.String"],"InputSearchChanged":["String.String"],"AddPreSaveSubTask":[],"AddCall":[],"AddCallWithTime":["Time.Posix"],"DeletePreSaveSubTask":["Main.SubTask"],"ToggleSubTask":["Main.SubTask"],"ArchiveCall":["Main.Call"],"OpenForm":[],"CloseForm":[],"GetTimeZone":["Time.Zone"],"SetToday":["Time.Posix"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Main.CallId":{"args":[],"tags":{"Creating":[],"FromBackend":["Basics.Int"]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"String.String":{"args":[],"tags":{"String":[]}},"Time.Zone":{"args":[],"tags":{"Zone":["Basics.Int","List.List Time.Era"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}}}}})}});}(this));
+	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.Call":{"args":[],"type":"{ id : Main.CallId, who : String.String, comments : String.String, when : Time.Posix }"},"Main.SubTask":{"args":[],"type":"{ callId : Main.CallId, text : String.String, done : Basics.Bool }"},"Time.Era":{"args":[],"type":"{ start : Basics.Int, offset : Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"InputWhoChanged":["String.String"],"InputCommentsChanged":["String.String"],"InputSubTaskChanged":["String.String"],"InputSearchChanged":["String.String"],"AddPreSaveSubTask":[],"AddCall":[],"AddCallWithTime":["Time.Posix"],"DeletePreSaveSubTask":["Main.SubTask"],"ToggleSubTask":["Main.SubTask"],"ArchiveCall":["Main.Call"],"OpenForm":[],"CloseForm":[],"GetTimeZone":["Time.Zone"],"SetToday":["Time.Posix"],"Receive":["Basics.Int"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Main.CallId":{"args":[],"tags":{"Creating":[],"FromBackend":["Basics.Int"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"String.String":{"args":[],"tags":{"String":[]}},"Time.Zone":{"args":[],"tags":{"Zone":["Basics.Int","List.List Time.Era"]}},"List.List":{"args":["a"],"tags":{}}}}})}});}(this));
