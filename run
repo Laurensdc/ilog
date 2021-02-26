@@ -1,0 +1,21 @@
+echo -e '\e[33m# Pulling latest version'
+echo -e '\e[39m'
+git pull origin main
+
+echo -e '\e[32mSuccess!'
+echo -e '\e[39m'
+
+echo -e '\e[33m# Building Elm'
+echo -e '\e[32m'
+Elm make elm/Main.elm --optimize --output server/public/main.js
+
+echo -e '\e[33m# Building server'
+echo -e '\e[39m'
+cd server && tsc && cd ..
+
+echo -e '\e[32mSuccess!'
+echo -e '\e[39m'
+
+echo -e '\e[33m# Running application'
+echo -e '\e[39m]'
+cd server && npm run prod

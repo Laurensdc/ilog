@@ -1,1 +1,0 @@
-Elm make src/Main.elm --optimize --output public/main.js

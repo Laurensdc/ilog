@@ -63,7 +63,7 @@ dummyCalls : List Call
 dummyCalls =
     [ { id = FromBackend 1
       , who = "Woe 24/02 19:24"
-      , comments = "Nog bellen naar labo enal, kwenie"
+      , comments = "TEST bellen naar labo enal, kwenie"
       , when = Time.millisToPosix 1614191035000
       }
     , { id = FromBackend 2
