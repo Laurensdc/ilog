@@ -1,1 +1,1 @@
-npx elm-live src/Main.elm --open --dir=docs -- --output=docs/main.js --debug
+npx elm-live src/Main.elm --open --dir=public -- --output=public/main.js --debug

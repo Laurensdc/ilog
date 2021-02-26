@@ -2,7 +2,10 @@
 
 ## Dev
 
-- Run & live reload with `elm-live`  
-  `./dev`
+- `./dev`
+  Run & live reload with `elm-live`
 
-- `docs` is the `public` folder, but named to deploy on github pages
+## Build
+
+`./build`
+Build & minify to be served. Output in `/public` folder
