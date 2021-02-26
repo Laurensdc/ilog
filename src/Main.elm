@@ -373,7 +373,7 @@ view model =
               Ui.row [ Ui.width Ui.fill ]
                 [ Ui.el [ Ui.alignLeft ]
                     (Widget.button (Widget.Material.containedButton Widget.Material.darkPalette)
-                        { text = "Gesprek toevoegen"
+                        { text = "Gespreeeeek toevoegen"
                         , icon = Material.Icons.Content.add |> Icon.materialIcons
                         , onPress = Just OpenForm
                         }

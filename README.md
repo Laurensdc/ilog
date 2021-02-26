@@ -16,7 +16,8 @@ Builds Elm, builds Node.js TS to JS, serves Node backend and opens browser with 
 #### Scripts
 
 - `./dev`  
-  Run & live reload with `elm-live`
+  Run & live reload with `elm-live` on `http://localhost:8000`,  
+  run & live reload backend files on `http://localhost:3000` with `ts-node-dev`.
 
 #### Dependencies
 

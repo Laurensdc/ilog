@@ -1,1 +1,1 @@
-npx elm-live elm/Main.elm --open --dir=server/public -- --output=server/public/main.js --debug
+npx elm-live src/Main.elm --open --dir=server/public -- --output=server/public/main.js --debug & cd server && npm run dev
