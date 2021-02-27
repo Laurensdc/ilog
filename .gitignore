@@ -6,3 +6,5 @@ repl-temp-*
 # Server stuff
 node_modules
 build
+
+config.js
