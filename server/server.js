@@ -1,28 +1,14 @@
-const express = require('express')
-const { Client } = require('pg')
-const config = require('./config')
+const express = require('express');
 
-const app = express()
-const PORT = 3000
-const client = new Client(config.db)
-
-const res = client
-  .connect()
-  .then((success) => {
-    console.log(success, 'value')
-  })
-  .catch((err) => {
-    console.log('Could not connect')
-    console.log(err)
-  })
-console.log(res)
+const app = express();
+const PORT = 3000;
 
 app.get('/test', (req, res) => {
-  res.send('Express + TypeScript')
-})
+  res.send('Express + TypeScript');
+});
 
-app.use('/', express.static('public'))
+app.use('/', express.static('public'));
 
 app.listen(PORT, () => {
-  console.log(`⚡️[server]: Server is running at https://localhost:${PORT}`)
-})
+  console.log(`⚡️[server]: Server is running at https://localhost:${PORT}`);
+});
