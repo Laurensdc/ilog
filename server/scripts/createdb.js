@@ -17,10 +17,5 @@ db.query(createCallsTableSQL, null)
     console.log('Success.');
     console.log(res.rows[0]);
   })
-  .catch((err) => {
-    console.log('Error!');
-    console.error(err);
-  })
-  .finally(() => {
-    process.exit(0);
-  });
+  .catch((err) => db.printErr(err))
+  .finally(() => process.exit(0));

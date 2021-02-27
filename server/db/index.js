@@ -19,4 +19,8 @@ module.exports = {
     );
     console.log(err.stack + '\x1b[0m');
   },
+
+  printRows: (rows) => {
+    rows.forEach((r) => console.log(r));
+  },
 };

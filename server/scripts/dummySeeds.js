@@ -12,12 +12,7 @@ VALUES
 
 db.query(callSeed)
   .then((res) => {
-    console.log('Success!');
-    console.log(res);
+    db.printRows(res.rows);
   })
-  .catch((err) => {
-    db.printErr(err);
-  })
-  .finally(() => {
-    process.exit(0);
-  });
+  .catch((err) => db.printErr(err))
+  .finally(() => process.exit(0));
