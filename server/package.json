@@ -5,8 +5,8 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "ts-node-dev --respawn server.ts",
-    "prod": "tsc && start http://localhost:3000 && node build/server.js"
+    "dev": "nodemon server",
+    "prod": "start http://localhost:3000 && node server.js"
   },
   "repository": {
     "type": "git",
@@ -24,6 +24,7 @@
   "devDependencies": {
     "eslint": "^7.20.0",
     "eslint-plugin-prettier": "^3.3.1",
+    "nodemon": "^2.0.7",
     "prettier": "^2.2.1"
   }
 }

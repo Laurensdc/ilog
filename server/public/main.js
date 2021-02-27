@@ -19471,7 +19471,7 @@ var $author$project$Main$view = function (model) {
 								{
 									icon: $Orasund$elm_ui_widgets$Widget$Icon$materialIcons($danmarcab$material_icons$Material$Icons$Content$add),
 									onPress: $elm$core$Maybe$Just($author$project$Main$OpenForm),
-									text: 'Gespreeeeek toevoegen'
+									text: 'Gesprek toevoegen'
 								})),
 							A2(
 							$mdgriffith$elm_ui$Element$el,

@@ -9,10 +9,6 @@ echo -e '\e[33m# Building Elm'
 echo -e '\e[32m'
 Elm make elm/Main.elm --optimize --output server/public/main.js
 
-echo -e '\e[33m# Building server'
-echo -e '\e[39m'
-cd server && tsc && cd ..
-
 echo -e '\e[32mSuccess!'
 echo -e '\e[39m'
 

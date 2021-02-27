@@ -1,7 +1,6 @@
-import express from 'express'
-import path from 'path'
-import { Client } from 'pg'
-import config from './config'
+const express = require('express')
+const { Client } = require('pg')
+const config = require('./config')
 
 const app = express()
 const PORT = 3000
