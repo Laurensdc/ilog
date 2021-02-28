@@ -26,7 +26,7 @@ module.exports = h.db
     return h.db.query(createSubTasksTableSQL, null);
   })
   .then(() => {
-    h.print.colored('Succesfully created tables calls & subtasks', 'green');
+    h.print.colored('Succesfully created tables calls & subtasks\n', 'green');
   })
   .catch((err) => db.printErr(err))
   .finally(() => process.exit(0));

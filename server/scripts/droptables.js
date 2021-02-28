@@ -10,12 +10,11 @@ DROP TABLE IF EXISTS calls;
 
 module.exports = h.db
   .query(dropSubtasks)
-  .then((res) => {
-    h.print.colored('Subtasks table deleted', 'green');
+  .then(() => {
     return h.db.query(dropCalls);
   })
   .then(() => {
-    h.print.colored('Calls table deleted', 'green');
+    h.print.colored('Successfully deleted Calls & Subtasks tables\n', 'green');
   })
 
   .catch((err) => h.print.err(err))

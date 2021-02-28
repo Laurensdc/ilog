@@ -2,11 +2,11 @@ const h = require('../helpers');
 
 const callSeed = `
 INSERT INTO
-  calls(id, who, comments, created_at)
+  calls(who, comments, created_at)
 VALUES
-  (1, 'Jan van Carrefour', 'Blabla hier is veel tekst van mij', NOW()),
-  (2, 'Gerard van de Begonia''s', 'Amai wat is Gerard een irritante zak zeg!', NOW()),
-  (3, 'Hans', 'Nog wat dingen herbekijken straks peisk', NOW())
+  ('Jan van Carrefour', 'Blabla hier is veel tekst van mij', NOW()),
+  ('Gerard van de Begonia''s', 'Amai wat is Gerard een irritante zak zeg!', NOW()),
+  ('Hans', 'Nog wat dingen herbekijken straks peisk', NOW())
 ;
 `;
 
@@ -28,7 +28,7 @@ module.exports = h.db
     return h.db.query(subtasksSeed);
   })
   .then(() => {
-    h.print.colored('Succesfully seeded calls & subtasks', 'green');
+    h.print.colored('Succesfully seeded calls & subtasks\n', 'green');
   })
   .catch((err) => h.print.err(err))
   .finally(() => process.exit(0));
