@@ -1,21 +1,32 @@
-const db = require('../db');
+const h = require('../helpers');
 
 const createCallsTableSQL = `
 CREATE TABLE IF NOT EXISTS calls (
-	id            serial                PRIMARY KEY,
+	id            SERIAL                PRIMARY KEY,
 	who           VARCHAR (100),
 	comments      TEXT,
-	created_at    TIMESTAMP             DEFAULT NOW()
+	created_at    TIMESTAMP             DEFAULT NOW(),
+  is_archived   BOOLEAN               DEFAULT false
 );
 `;
 
-const test = `
-SELECT NOW() as now`;
+const createSubTasksTableSQL = `
+CREATE TABLE IF NOT EXISTS subtasks (
+  id            SERIAL                PRIMARY KEY,
+  call_id       INT                   REFERENCES calls(id)      ON DELETE CASCADE,
+  text          VARCHAR (255),
+  done          BOOLEAN               DEFAULT false
+)
+`;
 
-db.query(createCallsTableSQL, null)
-  .then((res) => {
-    console.log('Success.');
-    console.log(res.rows[0]);
+module.exports = h.db
+  .query(createCallsTableSQL, null)
+
+  .then(() => {
+    return h.db.query(createSubTasksTableSQL, null);
+  })
+  .then(() => {
+    h.print.colored('Succesfully created tables calls & subtasks', 'green');
   })
   .catch((err) => db.printErr(err))
   .finally(() => process.exit(0));
