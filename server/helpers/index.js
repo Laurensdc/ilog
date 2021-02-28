@@ -19,6 +19,16 @@ module.exports = {
       console.log(sqlQuery);
       return pool.query(sqlQuery, params, callback);
     },
+
+    /**
+     * Safely return sqlResult as array
+     * @param {object} sqlResult
+     * @returns {object[]}
+     */
+    sqlToArr: (sqlResult) => {
+      if (sqlResult && sqlResult.rows && Array.isArray(sqlResult.rows)) return sqlResult.rows;
+      else return [];
+    },
   },
 
   /**
@@ -50,8 +60,13 @@ module.exports = {
      * @param {object} sqlResult
      */
     sqlRows: (sqlResult) => {
-      if (sqlResult && sqlResult.rows && sqlResult.rows.isArray && sqlResult.rows.length > 0) {
-        sqlResult.forEach((r) => console.log(r));
+      if (
+        sqlResult &&
+        sqlResult.rows &&
+        Array.isArray(sqlResult.rows) &&
+        sqlResult.rows.length > 0
+      ) {
+        sqlResult.rows.forEach((r) => console.log(r));
       } else {
         console.log('No rows returned from sqlResult');
       }
