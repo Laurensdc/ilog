@@ -4,6 +4,7 @@ import Browser
 import Color
 import Element as Ui
 import Element.Background as Background
+import Element.Border as Border
 import Element.Events
 import Element.Font as Font
 import Element.Input as Input
@@ -127,7 +128,10 @@ type alias Call =
 
 
 type alias SubTask =
-    { callId : CallId, text : String, done : Bool }
+    { callId : CallId
+    , text : String
+    , done : Bool
+    }
 
 
 type CallId
@@ -331,21 +335,25 @@ view model =
             if model.formVisible == True then
                 Ui.inFront
                     (Ui.el
-                        [ Background.color <| Ui.rgba 0 0 0 0.7
+                        [ Background.color <| Ui.rgba 1 1 1 0.7
                         , Ui.width Ui.fill
                         , Ui.height Ui.fill
                         , Font.center
 
-                        -- Close icon "x"
-                        , Ui.behindContent
-                            (Ui.el [ Ui.centerX, Ui.centerY, Ui.paddingEach { top = 0, right = 0, left = 700, bottom = 500 } ]
-                                (Ui.el [ Element.Events.onClick CloseForm ] (Icon.materialIcons Material.Icons.Navigation.close { size = 40, color = Color.white }))
-                            )
-
                         -- Also clicking anywhere on the screen (but not on the form) should close the form
                         , Ui.behindContent (Ui.el [ Ui.width Ui.fill, Ui.height Ui.fill, Element.Events.onClick CloseForm ] Ui.none)
                         ]
-                        (Ui.column [ Ui.centerX, Ui.centerY, Font.alignLeft, Ui.spacing 16 ] (viewForm model))
+                        (Ui.column
+                            [ Ui.centerX
+                            , Ui.centerY
+                            , Font.alignLeft
+                            , Ui.spacing 16
+                            , Background.color <| Ui.rgba 0 0 0 1
+                            , Ui.paddingXY 56 48
+                            , Border.rounded 32
+                            ]
+                            (viewForm model)
+                        )
                     )
 
             else
@@ -415,8 +423,13 @@ view model =
 viewForm : Model -> List (Ui.Element Msg)
 viewForm model =
     -- Title
-    [ Ui.el [ Font.size 24 ]
-        (Ui.text "Voeg een gesprek toe")
+    [ -- Close icon "x"
+      Ui.row [ Ui.width Ui.fill ]
+        [ Ui.el [ Font.size 24 ]
+            (Ui.text "Voeg een gesprek toe")
+        , Ui.el [ Ui.alignTop, Ui.alignRight ]
+            (Ui.el [ Element.Events.onClick CloseForm ] (Icon.materialIcons Material.Icons.Navigation.close { size = 40, color = Color.white }))
+        ]
     , --  Client
       Input.text
         [ Font.color <| color TextInverted
