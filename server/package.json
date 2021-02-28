@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server",
     "prod": "start http://localhost:3000 && node server.js",
-    "resetdb": "node scripts/droptables && node scripts/createdb && node scripts/dummyseeds"
+    "resetdb": "node scripts/droptables && node scripts/createtables && node scripts/dummyseeds"
   },
   "repository": {
     "type": "git",
