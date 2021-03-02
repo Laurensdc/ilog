@@ -5,26 +5,24 @@
 `./run`  
 Using the thing.
 
-Builds Elm, builds Node.js TS to JS, serves Node backend and opens browser with Frontend app.
+Builds Elm, serves Node backend and opens browser with Frontend app.
 
 ---
 
 ## Dev
 
-### Elm @Frontend
-
-#### Scripts
-
 - `./dev`  
   Run & live reload with `elm-live` on `http://localhost:8000`,  
   Run & live reload backend files on `http://localhost:3000` with `ts-node-dev`.
+
+### Elm @Frontend
 
 #### Dependencies
 
 - Node.js
 - Install [Elm](https://guide.elm-lang.org/install/).  
   [Editor plugins](https://github.com/elm/editor-plugins) are highly recommended.
-- Best to `npm install -g elm-test elm-format` as well, for.. testing and autoformatting.
+- Best to `npm install -g elm-test elm-format` for.. testing and autoformatting.
 
 ### Node.js @Backend
 
