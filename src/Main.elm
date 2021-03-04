@@ -296,17 +296,11 @@ update msg model =
                     ( { model | subTasks = subTasks }, Cmd.none )
 
                 Err err ->
-                    case err of
-                        Http.BadUrl str ->
-                            Debug.log str ( model, Cmd.none )
+                    Debug.log (anyErrorToString err) ( model, Cmd.none )
 
-                        Http.BadBody str ->
-                            Debug.log str
-                                ( model, Cmd.none )
 
-                        _ ->
-                            -- TODO : Handle errors
-                            ( model, Cmd.none )
+
+-- TODO : Handle errors
 
 
 {-| Checks calls for highest value of id.
@@ -394,7 +388,7 @@ view model =
         , Font.size 18
         , Font.color <| color Text
         , Background.color <| color Bg
-        , Ui.paddingXY 0 32
+        , Ui.padding 32
 
         -- Form
         , overlayFormIfVisible
@@ -794,15 +788,10 @@ subTasksDecoder =
     Json.Decode.field "subTasks"
         (Json.Decode.list
             (Json.Decode.map3 SubTask
-                (Json.Decode.field "call_id" (Json.Decode.nullable Json.Decode.int)
+                (Json.Decode.field "call_id" Json.Decode.int
                     |> Json.Decode.andThen
                         (\id ->
-                            case id of
-                                Just i ->
-                                    Json.Decode.succeed (FromBackend i)
-
-                                Nothing ->
-                                    Json.Decode.succeed (FromBackend 0)
+                            Json.Decode.succeed (FromBackend id)
                         )
                 )
                 (Json.Decode.field "text" Json.Decode.string)

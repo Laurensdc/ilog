@@ -11060,16 +11060,6 @@ var $author$project$Main$SubTask = F3(
 	});
 var $elm$json$Json$Decode$andThen = _Json_andThen;
 var $elm$json$Json$Decode$bool = _Json_decodeBool;
-var $elm$json$Json$Decode$null = _Json_decodeNull;
-var $elm$json$Json$Decode$oneOf = _Json_oneOf;
-var $elm$json$Json$Decode$nullable = function (decoder) {
-	return $elm$json$Json$Decode$oneOf(
-		_List_fromArray(
-			[
-				$elm$json$Json$Decode$null($elm$core$Maybe$Nothing),
-				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, decoder)
-			]));
-};
 var $author$project$Main$subTasksDecoder = A2(
 	$elm$json$Json$Decode$field,
 	'subTasks',
@@ -11080,19 +11070,10 @@ var $author$project$Main$subTasksDecoder = A2(
 			A2(
 				$elm$json$Json$Decode$andThen,
 				function (id) {
-					if (id.$ === 'Just') {
-						var i = id.a;
-						return $elm$json$Json$Decode$succeed(
-							$author$project$Main$FromBackend(i));
-					} else {
-						return $elm$json$Json$Decode$succeed(
-							$author$project$Main$FromBackend(0));
-					}
+					return $elm$json$Json$Decode$succeed(
+						$author$project$Main$FromBackend(id));
 				},
-				A2(
-					$elm$json$Json$Decode$field,
-					'call_id',
-					$elm$json$Json$Decode$nullable($elm$json$Json$Decode$int))),
+				A2($elm$json$Json$Decode$field, 'call_id', $elm$json$Json$Decode$int)),
 			A2($elm$json$Json$Decode$field, 'text', $elm$json$Json$Decode$string),
 			A2($elm$json$Json$Decode$field, 'done', $elm$json$Json$Decode$bool))));
 var $author$project$Main$getCallsAndSubTasks = function (backendUrl) {
@@ -11152,6 +11133,23 @@ var $author$project$Main$AddCallWithTime = function (a) {
 	return {$: 'AddCallWithTime', a: a};
 };
 var $author$project$Main$Creating = {$: 'Creating'};
+var $author$project$Main$anyErrorToString = function (err) {
+	switch (err.$) {
+		case 'BadUrl':
+			var str = err.a;
+			return 'Bad URL: ' + str;
+		case 'Timeout':
+			return 'Timeout';
+		case 'NetworkError':
+			return 'Network error';
+		case 'BadStatus':
+			var i = err.a;
+			return 'Bad status ' + $elm$core$String$fromInt(i);
+		default:
+			var str = err.a;
+			return 'Bad body: ' + str;
+	}
+};
 var $elm$core$List$maximum = function (list) {
 	if (list.b) {
 		var x = list.a;
@@ -11403,22 +11401,10 @@ var $author$project$Main$update = F2(
 						$elm$core$Platform$Cmd$none);
 				} else {
 					var err = httpResult.a;
-					switch (err.$) {
-						case 'BadUrl':
-							var str = err.a;
-							return A2(
-								$elm$core$Debug$log,
-								str,
-								_Utils_Tuple2(model, $elm$core$Platform$Cmd$none));
-						case 'BadBody':
-							var str = err.a;
-							return A2(
-								$elm$core$Debug$log,
-								str,
-								_Utils_Tuple2(model, $elm$core$Platform$Cmd$none));
-						default:
-							return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-					}
+					return A2(
+						$elm$core$Debug$log,
+						$author$project$Main$anyErrorToString(err),
+						_Utils_Tuple2(model, $elm$core$Platform$Cmd$none));
 				}
 		}
 	});
@@ -18093,6 +18079,19 @@ var $mdgriffith$elm_ui$Element$maximum = F2(
 		return A2($mdgriffith$elm_ui$Internal$Model$Max, i, l);
 	});
 var $mdgriffith$elm_ui$Element$none = $mdgriffith$elm_ui$Internal$Model$Empty;
+var $mdgriffith$elm_ui$Element$padding = function (x) {
+	var f = x;
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$padding,
+		A5(
+			$mdgriffith$elm_ui$Internal$Model$PaddingStyle,
+			'p-' + $elm$core$String$fromInt(x),
+			f,
+			f,
+			f,
+			f));
+};
 var $mdgriffith$elm_ui$Element$Input$Placeholder = F2(
 	function (a, b) {
 		return {$: 'Placeholder', a: a, b: b};
@@ -19927,7 +19926,7 @@ var $author$project$Main$view = function (model) {
 				$author$project$Main$color($author$project$Main$Text)),
 				$mdgriffith$elm_ui$Element$Background$color(
 				$author$project$Main$color($author$project$Main$Bg)),
-				A2($mdgriffith$elm_ui$Element$paddingXY, 0, 32),
+				$mdgriffith$elm_ui$Element$padding(32),
 				overlayFormIfVisible
 			]),
 		A2(
