@@ -111,7 +111,7 @@ init _ =
       , inputSearch = ""
       , formVisible = False
       , calls = dummyCalls
-      , subTasks = dummySubTasks
+      , subTasks = []
       , archivedCalls = []
       , preSaveSubTasks = []
       , searchResults = []
@@ -122,7 +122,7 @@ init _ =
     , Cmd.batch
         [ Task.perform GetTimeZone Time.here
         , Task.perform SetToday Time.now
-        , getCalls "http://localhost:3000"
+        , getCallsAndSubTasks "http://localhost:3000"
         ]
     )
 
@@ -177,7 +177,7 @@ type Msg
     | GetTimeZone Time.Zone
     | SetToday Time.Posix
     | Receive Int
-    | GotCalls (Result Http.Error (List Call))
+    | GotCallsAndSubTasks (Result Http.Error (List SubTask))
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -290,10 +290,10 @@ update msg model =
         Receive txt ->
             ( { model | inputComments = String.fromInt txt }, Cmd.none )
 
-        GotCalls httpResult ->
+        GotCallsAndSubTasks httpResult ->
             case httpResult of
-                Ok calls ->
-                    ( { model | calls = calls }, Cmd.none )
+                Ok subTasks ->
+                    ( { model | subTasks = subTasks }, Cmd.none )
 
                 Err err ->
                     case err of
@@ -761,9 +761,16 @@ toTwoDigits i =
 -- HTTP
 
 
-getCalls : String -> Cmd Msg
-getCalls backendUrl =
-    Http.get { url = backendUrl ++ "/calls", expect = Http.expectJson GotCalls callsDecoder }
+getCallsAndSubTasks : String -> Cmd Msg
+getCallsAndSubTasks backendUrl =
+    Http.get { url = backendUrl ++ "/calls", expect = Http.expectJson GotCallsAndSubTasks subTasksDecoder }
+
+
+
+-- callsAndSubTasksDecoder : Json.Decode.Decoder ( List Call, List SubTask )
+-- callsAndSubTasksDecoder =
+--     -- How to combine these?? They are two separate Lists in model ..
+--     Json.Decode.map2 () callsDecoder subTasksDecoder
 
 
 callsDecoder : Json.Decode.Decoder (List Call)
@@ -777,8 +784,50 @@ callsDecoder =
                 (Json.Decode.field "who" Json.Decode.string)
                 (Json.Decode.field "comments" Json.Decode.string)
                 (Json.Decode.field "created_at" Json.Decode.Extra.datetime)
+             -- How to split this into archived calls???
             )
         )
+
+
+subTasksDecoder : Json.Decode.Decoder (List SubTask)
+subTasksDecoder =
+    Json.Decode.field "subTasks"
+        (Json.Decode.list
+            (Json.Decode.map3 SubTask
+                (Json.Decode.field "call_id" (Json.Decode.nullable Json.Decode.int)
+                    |> Json.Decode.andThen
+                        (\id ->
+                            case id of
+                                Just i ->
+                                    Json.Decode.succeed (FromBackend i)
+
+                                Nothing ->
+                                    Json.Decode.succeed (FromBackend 0)
+                        )
+                )
+                (Json.Decode.field "text" Json.Decode.string)
+                (Json.Decode.field "done" Json.Decode.bool)
+            )
+        )
+
+
+anyErrorToString : Http.Error -> String
+anyErrorToString err =
+    case err of
+        Http.BadUrl str ->
+            "Bad URL: " ++ str
+
+        Http.Timeout ->
+            "Timeout"
+
+        Http.NetworkError ->
+            "Network error"
+
+        Http.BadStatus i ->
+            "Bad status " ++ String.fromInt i
+
+        Http.BadBody str ->
+            "Bad body: " ++ str
 
 
 
