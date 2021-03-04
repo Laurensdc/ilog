@@ -1,7 +1,8 @@
 port module Main exposing (..)
 
+import Ant.Icon
+import Ant.Icons as Icon
 import Browser
-import Color
 import Element as Ui
 import Element.Background as Background
 import Element.Border as Border
@@ -15,19 +16,10 @@ import Http
 import Json.Decode
 import Json.Decode.Extra
 import Json.Encode
-import Material.Icons.Action
-import Material.Icons.Content
-import Material.Icons.Navigation
-import Material.Icons.Toggle
 import Task
 import Time
 import Time.Extra as Time
 import TimeStuff
-import Widget
-import Widget.Customize
-import Widget.Icon as Icon
-import Widget.Material
-import Widget.Material.Color
 
 
 
@@ -88,29 +80,23 @@ dummySubTasks =
 
 
 type alias Model =
-    { -- Form stuff
-      inputWho : String
-    , inputComments : String
-    , inputSubTask : String
-    , preSaveSubTasks : List SubTask
+    FormStuff
+        { inputSearch : String
+        , formVisible : Bool
 
-    --
-    , inputSearch : String
-    , formVisible : Bool
+        -- Calls & subtasks (data)
+        , calls : List Call
+        , archivedCalls : List Call
+        , searchResults : List Call
+        , subTasks : List SubTask
 
-    -- Calls & subtasks (data)
-    , calls : List Call
-    , archivedCalls : List Call
-    , searchResults : List Call
-    , subTasks : List SubTask
+        -- Time stuff
+        , timeZone : Time.Zone
+        , today : Time.Posix
 
-    -- Time stuff
-    , timeZone : Time.Zone
-    , today : Time.Posix
-
-    -- Will need this to do http requests
-    , backendUrl : String
-    }
+        -- Will need this to do http requests
+        , backendUrl : String
+        }
 
 
 init : () -> ( Model, Cmd Msg )
@@ -383,12 +369,12 @@ viewDocument model =
 fontGlobals : List (Ui.Attribute Msg)
 fontGlobals =
     [ Font.family
-        [ Font.external { url = "https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,400;0,700;1,400&display=swap", name = "Ubuntu" }
+        [ Font.external { url = "https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Ubuntu:ital,wght@0,400;0,700;1,400;1,500&display=swap", name = "Open Sans" }
         , Font.typeface "Helvetica"
         , Font.sansSerif
         ]
     , Font.size 18
-    , Font.regular
+    , Font.light
     , Font.color <| color Text
     ]
 
@@ -401,8 +387,7 @@ view model =
                 viewFullScreenOverlay model
 
             else
-                -- Nothing
-                Ui.htmlAttribute (Html.Attributes.class "")
+                noAttr
     in
     Ui.layoutWith
         { options =
@@ -427,21 +412,9 @@ view model =
             , Ui.centerX
             , Ui.spacing 16
             ]
-            [ -- Show Form Button
-              Ui.row [ Ui.width Ui.fill, Ui.spacingXY 32 0 ]
-                [ --  Search
-                  Input.text
-                    [ Font.color <| color TextInverted
-                    , Ui.paddingXY 16 8
-                    , Ui.width (Ui.px 320)
-                    , Ui.alignRight
-                    , Border.rounded 4
-                    ]
-                    { onChange = InputSearchChanged
-                    , text = model.inputSearch
-                    , placeholder = Just (Input.placeholder [] (Ui.text "Zoek in gesprekken"))
-                    , label = Input.labelHidden "Zoeken"
-                    }
+            [ Ui.row [ Ui.width Ui.fill, Ui.spacingXY 32 0 ]
+                [ Ui.el [ Font.size 48, Font.bold ] (Ui.text "ILog")
+                , viewSearchbar model.inputSearch
                 , Ui.el []
                     (button "Gesprek toevoegen" OpenForm)
                 ]
@@ -463,6 +436,22 @@ view model =
                 Ui.none
             ]
         )
+
+
+viewSearchbar : String -> Ui.Element Msg
+viewSearchbar text =
+    Input.text
+        [ Font.color <| color TextInverted
+        , Ui.paddingXY 16 8
+        , Ui.width (Ui.px 320)
+        , Ui.alignRight
+        , Border.rounded 4
+        ]
+        { onChange = InputSearchChanged
+        , text = text
+        , placeholder = Just (Input.placeholder [] (Ui.text "Zoek in gesprekken"))
+        , label = Input.labelHidden "Zoeken"
+        }
 
 
 viewFullScreenOverlay : FormStuff r -> Ui.Attribute Msg
@@ -499,7 +488,7 @@ viewForm model =
         [ Ui.el [ Font.size 24 ]
             (Ui.text "Voeg een gesprek toe")
         , Ui.el [ Ui.alignTop, Ui.alignRight ]
-            (Ui.el [ Element.Events.onClick CloseForm ] (Icon.materialIcons Material.Icons.Navigation.close { size = 40, color = Color.white }))
+            (Ui.el [ Element.Events.onClick CloseForm ] (Icon.closeCircleOutlined [ Ant.Icon.width 32 ]))
         ]
     , --  Client
       Input.text
@@ -687,16 +676,16 @@ viewCalls calls subtasks options =
                     Font.strike
 
                   else
-                    Font.regular
+                    noAttr
                 ]
                 [ -- The little ball to click
                   Ui.row []
                     [ Ui.el [ Ui.width (Ui.px 32), Ui.alignTop, Element.Events.onClick (ArchiveCall call) ]
                         (if options.archived == True then
-                            Icon.materialIcons Material.Icons.Toggle.check_box { size = 24, color = Color.lightGreen }
+                            Icon.checkSquareFilled [ iconsize ]
 
                          else
-                            Icon.materialIcons Material.Icons.Toggle.radio_button_unchecked { size = 24, color = Color.lightGray }
+                            Icon.borderOutlined [ iconsize ]
                         )
 
                     -- Date / time
@@ -708,26 +697,8 @@ viewCalls calls subtasks options =
                         ]
 
                     -- Comments & SubTasks
-                    , Ui.column [ Ui.alignTop ]
-                        ([ Ui.el [ Ui.paddingEach { top = 0, left = 0, right = 0, bottom = 0 } ] (Ui.text call.comments)
-                         , if
-                            List.length
-                                (List.filter
-                                    (\s ->
-                                        if s.callId == call.id then
-                                            True
-
-                                        else
-                                            False
-                                    )
-                                    subtasks
-                                )
-                                > 0
-                           then
-                            Ui.el [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 } ] (Ui.text "Taken")
-
-                           else
-                            Ui.none
+                    , Ui.column [ Ui.alignTop, Ui.spacingXY 0 16 ]
+                        ([ Ui.el [] (Ui.text call.comments)
                          ]
                             ++ viewSubTasks call subtasks
                         )
@@ -759,10 +730,10 @@ viewSubTasks call subtasks =
                 ]
                 [ Ui.el [ Ui.paddingEach { top = 0, left = 0, right = 4, bottom = 0 } ]
                     (if subTask.done then
-                        Icon.materialIcons Material.Icons.Toggle.check_box { size = 24, color = Color.lightGreen }
+                        Icon.checkSquareFilled [ iconsize ]
 
                      else
-                        Icon.materialIcons Material.Icons.Toggle.check_box_outline_blank { size = 24, color = Color.lightGray }
+                        Icon.borderOutlined [ iconsize ]
                     )
                 , if subTask.done then
                     Ui.el [ Font.strike ] (Ui.text subTask.text)
@@ -782,7 +753,7 @@ viewPreSaveSubTasks model =
         (\subTask ->
             Ui.row []
                 [ Ui.el [ Ui.paddingEach { top = 0, right = 16, bottom = 0, left = 0 } ] (Ui.text subTask.text)
-                , Ui.el [ Element.Events.onClick (DeletePreSaveSubTask subTask) ] (Icon.materialIcons Material.Icons.Action.delete { size = 24, color = Color.lightRed })
+                , Ui.el [ Element.Events.onClick (DeletePreSaveSubTask subTask), Ui.pointer ] (Icon.deleteFilled [ iconsize ])
                 ]
         )
         model.preSaveSubTasks
@@ -931,10 +902,6 @@ subscriptions _ =
     Sub.none
 
 
-
--- HELPERS
-
-
 onEnter : msg -> Ui.Attribute msg
 onEnter msg =
     Ui.htmlAttribute
@@ -950,6 +917,16 @@ onEnter msg =
                     )
             )
         )
+
+
+noAttr : Ui.Attribute msg
+noAttr =
+    Ui.htmlAttribute (Html.Attributes.class "")
+
+
+iconsize : Ant.Icon.Attribute msg
+iconsize =
+    Ant.Icon.width 24
 
 
 
