@@ -34,15 +34,20 @@ oneDayInMs =
     1000 * 60 * 60 * 24
 
 
-dateToHumanStr : Time.Zone -> Time.Posix -> String
-dateToHumanStr zone posix =
-    toDutchWeekday (Time.toWeekday zone posix)
-        ++ " "
-        ++ toTwoDigits (Time.toDay zone posix)
+{-| e.g.: 24/03
+-}
+toHumanDate : Time.Zone -> Time.Posix -> String
+toHumanDate zone posix =
+    toTwoDigits (Time.toDay zone posix)
         ++ "/"
         ++ toDutchMonthNumber (Time.toMonth zone posix)
-        ++ "\n"
-        ++ (Time.toHour zone posix |> String.fromInt)
+
+
+{-| e.g.: 17:12
+-}
+toHumanTime : Time.Zone -> Time.Posix -> String
+toHumanTime zone posix =
+    (Time.toHour zone posix |> String.fromInt)
         ++ ":"
         ++ (Time.toMinute zone posix |> toTwoDigits)
 
@@ -152,8 +157,12 @@ toDutchMonthNumber month =
             "12"
 
 
-toDutchWeekday : Time.Weekday -> String
-toDutchWeekday day =
+toDutchWeekday : Time.Zone -> Time.Posix -> String
+toDutchWeekday zone posix =
+    let
+        day =
+            Time.toWeekday zone posix
+    in
     case day of
         Time.Mon ->
             "Maandag"
