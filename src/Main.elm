@@ -88,7 +88,7 @@ dummySubTasks =
 
 
 type alias Model =
-    { -- Input stuff
+    { -- Form stuff
       inputWho : String
     , inputComments : String
     , inputSubTask : String
@@ -148,7 +148,7 @@ init _ =
     )
 
 
-type alias FormInputs r =
+type alias FormStuff r =
     { r
         | inputWho : String
         , inputComments : String
@@ -380,6 +380,19 @@ viewDocument model =
     { title = "ILog", body = [ view model ] }
 
 
+fontGlobals : List (Ui.Attribute Msg)
+fontGlobals =
+    [ Font.family
+        [ Font.external { url = "https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,400;0,700;1,400&display=swap", name = "Ubuntu" }
+        , Font.typeface "Helvetica"
+        , Font.sansSerif
+        ]
+    , Font.size 18
+    , Font.regular
+    , Font.color <| color Text
+    ]
+
+
 view : Model -> Html.Html Msg
 view model =
     let
@@ -391,45 +404,46 @@ view model =
                 -- Nothing
                 Ui.htmlAttribute (Html.Attributes.class "")
     in
-    Ui.layout
-        [ Font.family
-            [ Font.external { url = "https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap", name = "Roboto" }
+    Ui.layoutWith
+        { options =
+            [ -- Global Focus styles
+              Ui.focusStyle
+                { borderColor = Nothing -- Just (color Boom)
+                , backgroundColor = Nothing
+                , shadow = Just { color = color Accented, offset = ( 0, 0 ), blur = 10, size = 3 }
+                }
             ]
-        , Font.size 18
-        , Font.color <| color Text
-        , Background.color <| color Bg
-        , Ui.padding 32
+        }
+        (fontGlobals
+            ++ [ Background.color <| color Bg
+               , Ui.padding 32
 
-        -- Form
-        , overlayFormIfVisible
-        ]
+               -- Form
+               , overlayFormIfVisible
+               ]
+        )
         (Ui.column
             [ Ui.width (Ui.fill |> Ui.maximum 1200)
             , Ui.centerX
             , Ui.spacing 16
             ]
             [ -- Show Form Button
-              Ui.row [ Ui.width Ui.fill ]
-                [ Ui.el [ Ui.alignLeft ]
-                    (Widget.button (Widget.Material.containedButton Widget.Material.darkPalette)
-                        { text = "Gesprek toevoegen"
-                        , icon = Material.Icons.Content.add |> Icon.materialIcons
-                        , onPress = Just OpenForm
-                        }
-                    )
-
-                --  Search
-                , Ui.el [ Ui.alignRight ] (Icon.materialIcons Material.Icons.Action.search { size = 40, color = Color.lightGray })
-                , Input.text
+              Ui.row [ Ui.width Ui.fill, Ui.spacingXY 32 0 ]
+                [ --  Search
+                  Input.text
                     [ Font.color <| color TextInverted
+                    , Ui.paddingXY 16 8
                     , Ui.width (Ui.px 320)
                     , Ui.alignRight
+                    , Border.rounded 4
                     ]
                     { onChange = InputSearchChanged
                     , text = model.inputSearch
-                    , placeholder = Just (Input.placeholder [] (Ui.text "Zoeken: Klant, datum, commentaar, ..."))
+                    , placeholder = Just (Input.placeholder [] (Ui.text "Zoek in gesprekken"))
                     , label = Input.labelHidden "Zoeken"
                     }
+                , Ui.el []
+                    (button "Gesprek toevoegen" OpenForm)
                 ]
             , -- Calls
               if model.inputSearch == "" then
@@ -451,7 +465,7 @@ view model =
         )
 
 
-viewFullScreenOverlay : FormInputs r -> Ui.Attribute Msg
+viewFullScreenOverlay : FormStuff r -> Ui.Attribute Msg
 viewFullScreenOverlay model =
     Ui.inFront
         (Ui.el
@@ -468,7 +482,7 @@ viewFullScreenOverlay model =
                 , Ui.centerY
                 , Font.alignLeft
                 , Ui.spacing 16
-                , Background.color <| Ui.rgba 0 0 0 1
+                , Background.color <| color Bg
                 , Ui.paddingXY 56 48
                 , Border.rounded 32
                 ]
@@ -477,7 +491,7 @@ viewFullScreenOverlay model =
         )
 
 
-viewForm : FormInputs r -> List (Ui.Element Msg)
+viewForm : FormStuff r -> List (Ui.Element Msg)
 viewForm model =
     -- Title
     [ -- Close icon "x"
@@ -527,11 +541,7 @@ viewForm model =
             }
         ]
     , Ui.column [] <| viewPreSaveSubTasks model
-    , Widget.button (Widget.Material.containedButton Widget.Material.darkPalette)
-        { text = "Gesprek opslaan"
-        , icon = Material.Icons.Content.add |> Icon.materialIcons
-        , onPress = Just AddCall
-        }
+    , button "Gesprek opslaan" AddCall
     ]
 
 
@@ -766,7 +776,7 @@ viewSubTasks call subtasks =
 
 {-| Subtasks before they are submitted
 -}
-viewPreSaveSubTasks : FormInputs r -> List (Ui.Element Msg)
+viewPreSaveSubTasks : FormStuff r -> List (Ui.Element Msg)
 viewPreSaveSubTasks model =
     List.map
         (\subTask ->
@@ -776,6 +786,24 @@ viewPreSaveSubTasks model =
                 ]
         )
         model.preSaveSubTasks
+
+
+button : String -> Msg -> Ui.Element Msg
+button label onPressMsg =
+    Input.button
+        [ Background.color <| color Boom
+        , Border.rounded 6
+        , Ui.paddingXY 32 8
+        , Font.color <| color Text
+        , Ui.mouseOver [ color Boom |> darken |> Background.color ]
+        , smoothTransition
+        ]
+        { label = Ui.text label, onPress = Just onPressMsg }
+
+
+smoothTransition : Ui.Attribute msg
+smoothTransition =
+    Ui.htmlAttribute (Html.Attributes.style "transition" "0.15s ease-in-out")
 
 
 
@@ -907,12 +935,6 @@ subscriptions _ =
 -- HELPERS
 
 
-type AppColor
-    = Text
-    | TextInverted
-    | Bg
-
-
 onEnter : msg -> Ui.Attribute msg
 onEnter msg =
     Ui.htmlAttribute
@@ -930,14 +952,81 @@ onEnter msg =
         )
 
 
+
+-- COLORS
+
+
+type AppColor
+    = Text
+    | TextInverted
+    | Bg
+    | Boom
+    | Accented
+
+
 color : AppColor -> Ui.Color
 color col =
+    -- #1b1f3a, #a64942, #ff7844
     case col of
         Text ->
             Ui.rgb255 0xFF 0xFF 0xFF
 
         TextInverted ->
-            Ui.rgb255 0x33 0x33 0x33
+            Ui.rgb255 0x22 0x22 0x22
 
         Bg ->
-            Widget.Material.Color.fromColor Widget.Material.Color.dark
+            Ui.rgb255 0x20 0x20 0x3A
+
+        Boom ->
+            Ui.rgb255 0xB0 0x2A 0xB0
+
+        Accented ->
+            Ui.rgb255 0x60 0x20 0x80
+
+
+setAlpha : Float -> Ui.Color -> Ui.Color
+setAlpha alpha col =
+    let
+        rgb =
+            Ui.toRgb col
+    in
+    Ui.fromRgb
+        { red = rgb.red
+        , blue = rgb.blue
+        , green = rgb.green
+        , alpha = alpha
+        }
+
+
+darken : Ui.Color -> Ui.Color
+darken col =
+    let
+        rgb =
+            Ui.toRgb col
+
+        factor =
+            0.85
+    in
+    Ui.fromRgb
+        { red = rgb.red * factor
+        , blue = rgb.blue * factor
+        , green = rgb.green * factor
+        , alpha = rgb.alpha
+        }
+
+
+lighten : Ui.Color -> Ui.Color
+lighten col =
+    let
+        rgb =
+            Ui.toRgb col
+
+        factor =
+            1.15
+    in
+    Ui.fromRgb
+        { red = rgb.red * factor
+        , blue = rgb.blue * factor
+        , green = rgb.green * factor
+        , alpha = rgb.alpha * factor
+        }
