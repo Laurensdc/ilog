@@ -17305,6 +17305,48 @@ var $author$project$Main$fontGlobals = _List_fromArray(
 		$mdgriffith$elm_ui$Element$Font$color(
 		$author$project$Main$color($author$project$Main$Text))
 	]);
+var $mdgriffith$elm_ui$Internal$Model$paddingName = F4(
+	function (top, right, bottom, left) {
+		return 'pad-' + ($elm$core$String$fromInt(top) + ('-' + ($elm$core$String$fromInt(right) + ('-' + ($elm$core$String$fromInt(bottom) + ('-' + $elm$core$String$fromInt(left)))))));
+	});
+var $mdgriffith$elm_ui$Element$paddingEach = function (_v0) {
+	var top = _v0.top;
+	var right = _v0.right;
+	var bottom = _v0.bottom;
+	var left = _v0.left;
+	if (_Utils_eq(top, right) && (_Utils_eq(top, bottom) && _Utils_eq(top, left))) {
+		var topFloat = top;
+		return A2(
+			$mdgriffith$elm_ui$Internal$Model$StyleClass,
+			$mdgriffith$elm_ui$Internal$Flag$padding,
+			A5(
+				$mdgriffith$elm_ui$Internal$Model$PaddingStyle,
+				'p-' + $elm$core$String$fromInt(top),
+				topFloat,
+				topFloat,
+				topFloat,
+				topFloat));
+	} else {
+		return A2(
+			$mdgriffith$elm_ui$Internal$Model$StyleClass,
+			$mdgriffith$elm_ui$Internal$Flag$padding,
+			A5(
+				$mdgriffith$elm_ui$Internal$Model$PaddingStyle,
+				A4($mdgriffith$elm_ui$Internal$Model$paddingName, top, right, bottom, left),
+				top,
+				right,
+				bottom,
+				left));
+	}
+};
+var $mdgriffith$elm_ui$Element$Font$regular = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$fontWeight, $mdgriffith$elm_ui$Internal$Style$classes.textNormalWeight);
+var $author$project$Main$h2Styles = _List_fromArray(
+	[
+		$mdgriffith$elm_ui$Element$paddingEach(
+		{bottom: 0, left: 0, right: 0, top: 32}),
+		$mdgriffith$elm_ui$Element$Font$size(22),
+		$mdgriffith$elm_ui$Element$Font$regular
+	]);
 var $mdgriffith$elm_ui$Internal$Model$OnlyDynamic = F2(
 	function (a, b) {
 		return {$: 'OnlyDynamic', a: a, b: b};
@@ -17530,40 +17572,6 @@ var $mdgriffith$elm_ui$Element$padding = function (x) {
 			f,
 			f,
 			f));
-};
-var $mdgriffith$elm_ui$Internal$Model$paddingName = F4(
-	function (top, right, bottom, left) {
-		return 'pad-' + ($elm$core$String$fromInt(top) + ('-' + ($elm$core$String$fromInt(right) + ('-' + ($elm$core$String$fromInt(bottom) + ('-' + $elm$core$String$fromInt(left)))))));
-	});
-var $mdgriffith$elm_ui$Element$paddingEach = function (_v0) {
-	var top = _v0.top;
-	var right = _v0.right;
-	var bottom = _v0.bottom;
-	var left = _v0.left;
-	if (_Utils_eq(top, right) && (_Utils_eq(top, bottom) && _Utils_eq(top, left))) {
-		var topFloat = top;
-		return A2(
-			$mdgriffith$elm_ui$Internal$Model$StyleClass,
-			$mdgriffith$elm_ui$Internal$Flag$padding,
-			A5(
-				$mdgriffith$elm_ui$Internal$Model$PaddingStyle,
-				'p-' + $elm$core$String$fromInt(top),
-				topFloat,
-				topFloat,
-				topFloat,
-				topFloat));
-	} else {
-		return A2(
-			$mdgriffith$elm_ui$Internal$Model$StyleClass,
-			$mdgriffith$elm_ui$Internal$Flag$padding,
-			A5(
-				$mdgriffith$elm_ui$Internal$Model$PaddingStyle,
-				A4($mdgriffith$elm_ui$Internal$Model$paddingName, top, right, bottom, left),
-				top,
-				right,
-				bottom,
-				left));
-	}
 };
 var $mdgriffith$elm_ui$Internal$Model$AsRow = {$: 'AsRow'};
 var $mdgriffith$elm_ui$Internal$Model$asRow = $mdgriffith$elm_ui$Internal$Model$AsRow;
@@ -18191,8 +18199,7 @@ var $author$project$Main$viewCalls = F3(
 			$mdgriffith$elm_ui$Element$column,
 			_List_fromArray(
 				[
-					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-					A2($mdgriffith$elm_ui$Element$spacingXY, 0, 16)
+					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
 				]),
 			A2(
 				$elm$core$List$map,
@@ -18262,24 +18269,15 @@ var $author$project$Main$viewCalls = F3(
 														_List_fromArray(
 															[
 																$mdgriffith$elm_ui$Element$width(
-																$mdgriffith$elm_ui$Element$px(140))
+																$mdgriffith$elm_ui$Element$px(100))
 															]),
 														$mdgriffith$elm_ui$Element$text(
 															A2($author$project$TimeStuff$toDutchWeekday, options.timeZone, call.when))),
 														A2(
 														$mdgriffith$elm_ui$Element$el,
-														_List_fromArray(
-															[
-																$mdgriffith$elm_ui$Element$width(
-																$mdgriffith$elm_ui$Element$px(80))
-															]),
-														$mdgriffith$elm_ui$Element$text(
-															A2($author$project$TimeStuff$toHumanDate, options.timeZone, call.when))),
-														A2(
-														$mdgriffith$elm_ui$Element$el,
 														_List_Nil,
 														$mdgriffith$elm_ui$Element$text(
-															A2($author$project$TimeStuff$toHumanTime, options.timeZone, call.when)))
+															A2($author$project$TimeStuff$toHumanDate, options.timeZone, call.when) + (' - ' + A2($author$project$TimeStuff$toHumanTime, options.timeZone, call.when))))
 													])),
 												A2(
 												$mdgriffith$elm_ui$Element$paragraph,
@@ -19425,14 +19423,6 @@ var $author$project$Main$viewFullScreenOverlay = function (model) {
 					]),
 				$author$project$Main$viewForm(model))));
 };
-var $mdgriffith$elm_ui$Element$Font$regular = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$fontWeight, $mdgriffith$elm_ui$Internal$Style$classes.textNormalWeight);
-var $author$project$Main$h2Styles = _List_fromArray(
-	[
-		$mdgriffith$elm_ui$Element$paddingEach(
-		{bottom: 0, left: 0, right: 0, top: 32}),
-		$mdgriffith$elm_ui$Element$Font$size(22),
-		$mdgriffith$elm_ui$Element$Font$regular
-	]);
 var $author$project$Main$viewSearchCalls = function (model) {
 	var search = $elm$core$String$toLower(model.inputSearch);
 	var filterer = function (call) {
@@ -19764,14 +19754,21 @@ var $author$project$Main$view = function (model) {
 						])),
 					(model.inputSearch === '') ? $author$project$Main$viewUnarchivedCalls(model) : $mdgriffith$elm_ui$Element$none,
 					(model.inputSearch === '') ? A2(
-					$mdgriffith$elm_ui$Element$el,
+					$mdgriffith$elm_ui$Element$column,
 					_List_fromArray(
 						[
 							$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
 							$mdgriffith$elm_ui$Element$paddingEach(
 							{bottom: 0, left: 0, right: 0, top: 128})
 						]),
-					$author$project$Main$viewArchivedCalls(model)) : $mdgriffith$elm_ui$Element$none,
+					_List_fromArray(
+						[
+							($elm$core$List$length(model.archivedCalls) > 0) ? A2(
+							$mdgriffith$elm_ui$Element$el,
+							$author$project$Main$h2Styles,
+							$mdgriffith$elm_ui$Element$text('Done!')) : $mdgriffith$elm_ui$Element$none,
+							$author$project$Main$viewArchivedCalls(model)
+						])) : $mdgriffith$elm_ui$Element$none,
 					(model.inputSearch !== '') ? $author$project$Main$viewSearchCalls(model) : $mdgriffith$elm_ui$Element$none
 				])));
 };

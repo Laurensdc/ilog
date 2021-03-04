@@ -425,7 +425,14 @@ view model =
               else
                 Ui.none
             , if model.inputSearch == "" then
-                Ui.el [ Ui.width Ui.fill, Ui.paddingEach { top = 128, left = 0, right = 0, bottom = 0 } ] (viewArchivedCalls model)
+                Ui.column [ Ui.width Ui.fill, Ui.paddingEach { top = 128, left = 0, right = 0, bottom = 0 } ]
+                    [ if List.length model.archivedCalls > 0 then
+                        Ui.el h2Styles (Ui.text "Done!")
+
+                      else
+                        Ui.none
+                    , viewArchivedCalls model
+                    ]
 
               else
                 Ui.none
@@ -671,7 +678,6 @@ viewCalls calls subtasks options =
     in
     Ui.column
         [ Ui.width Ui.fill
-        , Ui.spacingXY 0 16
         ]
         (List.map
             (\call ->
@@ -703,9 +709,8 @@ viewCalls calls subtasks options =
                             [ Ui.el [ Font.semiBold, Font.size 22, Ui.paddingEach { left = 0, right = 0, top = 0, bottom = 8 } ]
                                 (Ui.text call.who)
                             , Ui.row [ Font.italic ]
-                                [ Ui.el [ Ui.width <| Ui.px 140 ] (Ui.text (TimeStuff.toDutchWeekday options.timeZone call.when))
-                                , Ui.el [ Ui.width <| Ui.px 80 ] (Ui.text (TimeStuff.toHumanDate options.timeZone call.when))
-                                , Ui.el [] (Ui.text (TimeStuff.toHumanTime options.timeZone call.when))
+                                [ Ui.el [ Ui.width <| Ui.px 100 ] (Ui.text (TimeStuff.toDutchWeekday options.timeZone call.when))
+                                , Ui.el [] (Ui.text (TimeStuff.toHumanDate options.timeZone call.when ++ " - " ++ TimeStuff.toHumanTime options.timeZone call.when))
                                 ]
                             , Ui.paragraph [ Ui.paddingEach { top = 32, left = 0, right = 0, bottom = 0 } ] [ Ui.text call.comments ]
                             ]
