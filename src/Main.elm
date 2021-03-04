@@ -11,7 +11,10 @@ import Element.Input as Input
 import Html
 import Html.Attributes
 import Html.Events
+import Http
 import Json.Decode
+import Json.Decode.Extra
+import Json.Encode
 import Material.Icons.Action
 import Material.Icons.Content
 import Material.Icons.Navigation
@@ -57,6 +60,7 @@ type alias Model =
     , preSaveSubTasks : List SubTask
     , timeZone : Time.Zone
     , today : Time.Posix
+    , backendUrl : String
     }
 
 
@@ -113,9 +117,13 @@ init _ =
       , searchResults = []
       , timeZone = Time.utc
       , today = Time.millisToPosix 0
+      , backendUrl = "http://localhost:3000"
       }
     , Cmd.batch
-        [ Task.perform GetTimeZone Time.here, Task.perform SetToday Time.now ]
+        [ Task.perform GetTimeZone Time.here
+        , Task.perform SetToday Time.now
+        , getCalls "http://localhost:3000"
+        ]
     )
 
 
@@ -169,6 +177,7 @@ type Msg
     | GetTimeZone Time.Zone
     | SetToday Time.Posix
     | Receive Int
+    | GotCalls (Result Http.Error (List Call))
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -280,6 +289,24 @@ update msg model =
 
         Receive txt ->
             ( { model | inputComments = String.fromInt txt }, Cmd.none )
+
+        GotCalls httpResult ->
+            case httpResult of
+                Ok calls ->
+                    ( { model | calls = calls }, Cmd.none )
+
+                Err err ->
+                    case err of
+                        Http.BadUrl str ->
+                            Debug.log str ( model, Cmd.none )
+
+                        Http.BadBody str ->
+                            Debug.log str
+                                ( model, Cmd.none )
+
+                        _ ->
+                            -- TODO : Handle errors
+                            ( model, Cmd.none )
 
 
 {-| Checks calls for highest value of id.
@@ -728,6 +755,30 @@ toTwoDigits i =
 
     else
         String.fromInt i
+
+
+
+-- HTTP
+
+
+getCalls : String -> Cmd Msg
+getCalls backendUrl =
+    Http.get { url = backendUrl ++ "/calls", expect = Http.expectJson GotCalls callsDecoder }
+
+
+callsDecoder : Json.Decode.Decoder (List Call)
+callsDecoder =
+    Json.Decode.field "calls"
+        (Json.Decode.list
+            (Json.Decode.map4 Call
+                (Json.Decode.field "id" Json.Decode.int
+                    |> Json.Decode.andThen (\i -> Json.Decode.succeed (FromBackend i))
+                )
+                (Json.Decode.field "who" Json.Decode.string)
+                (Json.Decode.field "comments" Json.Decode.string)
+                (Json.Decode.field "created_at" Json.Decode.Extra.datetime)
+            )
+        )
 
 
 

@@ -51,6 +51,7 @@ router.get('/', async (req, res) => {
 router.put('/add', async (req, res) => {
   const call = req.body.call;
 
+  /** Validation **/
   if (!call) {
     return res.status(400).json({
       message: 'Please submit a call object with this request',
@@ -75,6 +76,7 @@ router.put('/add', async (req, res) => {
     });
   }
 
+  /** Inserting **/
   try {
     const insertCallSQL = `
     INSERT INTO calls (who, comments, created_at, is_archived)
@@ -89,17 +91,14 @@ router.put('/add', async (req, res) => {
     ]);
 
     const callId = h.db.sqlToArr(callResult)[0].id;
+
     const subTasks = getParsedSubTasks(callId, call.subTasks);
-
-    console.log(callId);
-    console.log(subTasks);
-
     const prepSubtaskInserts = h.db.prepareInserts(subTasks);
 
     let insertSubTasksSQL = `
     INSERT INTO subtasks (call_id, text, done)
       VALUES 
-    ${prepSubtaskInserts.values}
+  ${prepSubtaskInserts.values}
     ;     
     `;
 
