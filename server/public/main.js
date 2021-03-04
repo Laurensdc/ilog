@@ -17296,7 +17296,7 @@ var $author$project$Main$fontGlobals = _List_fromArray(
 		_List_fromArray(
 			[
 				$mdgriffith$elm_ui$Element$Font$external(
-				{name: 'Open Sans', url: 'https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Ubuntu:ital,wght@0,400;0,700;1,400;1,500&display=swap'}),
+				{name: 'Open Sans', url: 'https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Ubuntu:ital,wght@0,400;0,700;1,400;1,500&display=swap'}),
 				$mdgriffith$elm_ui$Element$Font$typeface('Helvetica'),
 				$mdgriffith$elm_ui$Element$Font$sansSerif
 			])),
@@ -17849,6 +17849,7 @@ var $mdgriffith$elm_ui$Internal$Model$Px = function (a) {
 	return {$: 'Px', a: a};
 };
 var $mdgriffith$elm_ui$Element$px = $mdgriffith$elm_ui$Internal$Model$Px;
+var $mdgriffith$elm_ui$Element$Font$semiBold = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$fontWeight, $mdgriffith$elm_ui$Internal$Style$classes.textSemiBold);
 var $elm$core$List$sortWith = _List_sortWith;
 var $elm$time$Time$Fri = {$: 'Fri'};
 var $elm$time$Time$Mon = {$: 'Mon'};
@@ -18244,7 +18245,7 @@ var $author$project$Main$viewCalls = F3(
 												$mdgriffith$elm_ui$Element$el,
 												_List_fromArray(
 													[
-														$mdgriffith$elm_ui$Element$Font$bold,
+														$mdgriffith$elm_ui$Element$Font$semiBold,
 														$mdgriffith$elm_ui$Element$Font$size(22),
 														$mdgriffith$elm_ui$Element$paddingEach(
 														{bottom: 8, left: 0, right: 0, top: 0})
@@ -19424,6 +19425,14 @@ var $author$project$Main$viewFullScreenOverlay = function (model) {
 					]),
 				$author$project$Main$viewForm(model))));
 };
+var $mdgriffith$elm_ui$Element$Font$regular = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$fontWeight, $mdgriffith$elm_ui$Internal$Style$classes.textNormalWeight);
+var $author$project$Main$h2Styles = _List_fromArray(
+	[
+		$mdgriffith$elm_ui$Element$paddingEach(
+		{bottom: 0, left: 0, right: 0, top: 32}),
+		$mdgriffith$elm_ui$Element$Font$size(22),
+		$mdgriffith$elm_ui$Element$Font$regular
+	]);
 var $author$project$Main$viewSearchCalls = function (model) {
 	var search = $elm$core$String$toLower(model.inputSearch);
 	var filterer = function (call) {
@@ -19451,18 +19460,15 @@ var $author$project$Main$viewSearchCalls = function (model) {
 	var foundCalls = A2($elm$core$List$filter, filterer, model.calls);
 	return (($elm$core$List$length(foundCalls) > 0) || ($elm$core$List$length(foundArchivedCalls) > 0)) ? A2(
 		$mdgriffith$elm_ui$Element$column,
-		_List_Nil,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
+			]),
 		_List_fromArray(
 			[
 				A2(
 				$mdgriffith$elm_ui$Element$el,
-				_List_fromArray(
-					[
-						$mdgriffith$elm_ui$Element$paddingEach(
-						{bottom: 0, left: 0, right: 0, top: 16}),
-						$mdgriffith$elm_ui$Element$Font$size(24),
-						$mdgriffith$elm_ui$Element$Font$bold
-					]),
+				$author$project$Main$h2Styles,
 				$mdgriffith$elm_ui$Element$text('Zoekresultaten')),
 				A3(
 				$author$project$Main$viewCalls,
@@ -19646,17 +19652,9 @@ var $author$project$Main$filterCallsFromThisWeekButNotToday = F3(
 			},
 			calls);
 	});
-var $mdgriffith$elm_ui$Element$Font$regular = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$fontWeight, $mdgriffith$elm_ui$Internal$Style$classes.textNormalWeight);
 var $author$project$Main$viewUnarchivedCalls = function (model) {
 	var topPadding = $mdgriffith$elm_ui$Element$paddingEach(
 		{bottom: 0, left: 0, right: 0, top: 32});
-	var titleStyles = _List_fromArray(
-		[
-			$mdgriffith$elm_ui$Element$paddingEach(
-			{bottom: 0, left: 0, right: 0, top: 32}),
-			$mdgriffith$elm_ui$Element$Font$size(22),
-			$mdgriffith$elm_ui$Element$Font$regular
-		]);
 	var callsToday = A3($author$project$Main$filterCallsFromDay, model.calls, model.timeZone, model.today);
 	var viewCallsToday = A3(
 		$author$project$Main$viewCalls,
@@ -19685,17 +19683,17 @@ var $author$project$Main$viewUnarchivedCalls = function (model) {
 			[
 				($elm$core$List$length(callsToday) > 0) ? A2(
 				$mdgriffith$elm_ui$Element$el,
-				titleStyles,
+				$author$project$Main$h2Styles,
 				$mdgriffith$elm_ui$Element$text('Vandaag')) : $mdgriffith$elm_ui$Element$none,
 				viewCallsToday,
 				($elm$core$List$length(callsThisWeek) > 0) ? A2(
 				$mdgriffith$elm_ui$Element$el,
-				titleStyles,
+				$author$project$Main$h2Styles,
 				$mdgriffith$elm_ui$Element$text('Eerder deze week')) : $mdgriffith$elm_ui$Element$none,
 				viewCallsThisWeek,
 				($elm$core$List$length(callsBeforeThisWeek) > 0) ? A2(
 				$mdgriffith$elm_ui$Element$el,
-				titleStyles,
+				$author$project$Main$h2Styles,
 				$mdgriffith$elm_ui$Element$text('Gesprekken uit een ver verleden')) : $mdgriffith$elm_ui$Element$none,
 				viewCallsBeforeThisWeek
 			])) : $mdgriffith$elm_ui$Element$none;

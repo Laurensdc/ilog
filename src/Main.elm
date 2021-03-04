@@ -369,7 +369,7 @@ viewDocument model =
 fontGlobals : List (Ui.Attribute Msg)
 fontGlobals =
     [ Font.family
-        [ Font.external { url = "https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Ubuntu:ital,wght@0,400;0,700;1,400;1,500&display=swap", name = "Open Sans" }
+        [ Font.external { url = "https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Ubuntu:ital,wght@0,400;0,700;1,400;1,500&display=swap", name = "Open Sans" }
         , Font.typeface "Helvetica"
         , Font.sansSerif
         ]
@@ -562,12 +562,9 @@ viewSearchCalls model =
             List.filter filterer model.archivedCalls
     in
     if List.length foundCalls > 0 || List.length foundArchivedCalls > 0 then
-        Ui.column []
+        Ui.column [ Ui.width Ui.fill ]
             [ Ui.el
-                [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 }
-                , Font.size 24
-                , Font.bold
-                ]
+                h2Styles
                 (Ui.text "Zoekresultaten")
             , viewCalls foundCalls model.subTasks { archived = False, timeZone = model.timeZone, today = model.today }
             , viewCalls foundArchivedCalls model.subTasks { archived = True, timeZone = model.timeZone, today = model.today }
@@ -582,12 +579,6 @@ viewUnarchivedCalls model =
     let
         topPadding =
             Ui.paddingEach { top = 32, left = 0, right = 0, bottom = 0 }
-
-        titleStyles =
-            [ Ui.paddingEach { top = 32, left = 0, right = 0, bottom = 0 }
-            , Font.size 22
-            , Font.regular
-            ]
 
         callsToday =
             filterCallsFromDay model.calls model.timeZone model.today
@@ -617,7 +608,7 @@ viewUnarchivedCalls model =
         Ui.column [ Ui.width Ui.fill ]
             [ -- Today
               if List.length callsToday > 0 then
-                Ui.el titleStyles (Ui.text "Vandaag")
+                Ui.el h2Styles (Ui.text "Vandaag")
 
               else
                 Ui.none
@@ -625,7 +616,7 @@ viewUnarchivedCalls model =
 
             -- Week
             , if List.length callsThisWeek > 0 then
-                Ui.el titleStyles (Ui.text "Eerder deze week")
+                Ui.el h2Styles (Ui.text "Eerder deze week")
 
               else
                 Ui.none
@@ -633,7 +624,7 @@ viewUnarchivedCalls model =
 
             -- Before that
             , if List.length callsBeforeThisWeek > 0 then
-                Ui.el titleStyles (Ui.text "Gesprekken uit een ver verleden")
+                Ui.el h2Styles (Ui.text "Gesprekken uit een ver verleden")
 
               else
                 Ui.none
@@ -709,7 +700,7 @@ viewCalls calls subtasks options =
                     -- Date / time
                     , Ui.column [ Ui.alignTop ]
                         [ Ui.column []
-                            [ Ui.el [ Font.bold, Font.size 22, Ui.paddingEach { left = 0, right = 0, top = 0, bottom = 8 } ]
+                            [ Ui.el [ Font.semiBold, Font.size 22, Ui.paddingEach { left = 0, right = 0, top = 0, bottom = 8 } ]
                                 (Ui.text call.who)
                             , Ui.row [ Font.italic ]
                                 [ Ui.el [ Ui.width <| Ui.px 140 ] (Ui.text (TimeStuff.toDutchWeekday options.timeZone call.when))
@@ -798,6 +789,14 @@ button label onPressMsg =
         , smoothTransition
         ]
         { label = Ui.text label, onPress = Just onPressMsg }
+
+
+h2Styles : List (Ui.Attribute msg)
+h2Styles =
+    [ Ui.paddingEach { top = 32, left = 0, right = 0, bottom = 0 }
+    , Font.size 22
+    , Font.regular
+    ]
 
 
 smoothTransition : Ui.Attribute msg
