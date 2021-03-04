@@ -22,6 +22,7 @@ import Material.Icons.Toggle
 import Task
 import Time
 import Time.Extra as Time
+import TimeStuff
 import Widget
 import Widget.Customize
 import Widget.Icon as Icon
@@ -45,23 +46,6 @@ main =
 
 
 -- MODEL
-
-
-type alias Model =
-    { inputWho : String
-    , inputComments : String
-    , inputSubTask : String
-    , inputSearch : String
-    , formVisible : Bool
-    , calls : List Call
-    , archivedCalls : List Call
-    , searchResults : List Call
-    , subTasks : List SubTask
-    , preSaveSubTasks : List SubTask
-    , timeZone : Time.Zone
-    , today : Time.Posix
-    , backendUrl : String
-    }
 
 
 dummyCalls : List Call
@@ -103,20 +87,51 @@ dummySubTasks =
     ]
 
 
+type alias Model =
+    { -- Input stuff
+      inputWho : String
+    , inputComments : String
+    , inputSubTask : String
+    , inputSearch : String
+    , formVisible : Bool
+
+    -- Calls & subtasks (data)
+    , calls : List Call
+    , archivedCalls : List Call
+    , searchResults : List Call
+    , subTasks : List SubTask
+    , preSaveSubTasks : List SubTask
+
+    -- Time stuff
+    , timeZone : Time.Zone
+    , today : Time.Posix
+
+    -- Will need this to do http requests
+    , backendUrl : String
+    }
+
+
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { inputWho = ""
+    ( { -- Input stuff
+        inputWho = ""
       , inputComments = ""
       , inputSubTask = ""
       , inputSearch = ""
       , formVisible = False
+
+      -- Calls & subtasks (data)
       , calls = dummyCalls
       , subTasks = []
       , archivedCalls = []
       , preSaveSubTasks = []
       , searchResults = []
+
+      -- Time stuff
       , timeZone = Time.utc
       , today = Time.millisToPosix 0
+
+      -- Will need this to do http requests
       , backendUrl = "http://localhost:3000"
       }
     , Cmd.batch
@@ -176,7 +191,6 @@ type Msg
     | CloseForm
     | GetTimeZone Time.Zone
     | SetToday Time.Posix
-    | Receive Int
     | GotCallsAndSubTasks (Result Http.Error (List SubTask))
 
 
@@ -287,9 +301,6 @@ update msg model =
         CloseForm ->
             ( { model | formVisible = False }, Cmd.none )
 
-        Receive txt ->
-            ( { model | inputComments = String.fromInt txt }, Cmd.none )
-
         GotCallsAndSubTasks httpResult ->
             case httpResult of
                 Ok subTasks ->
@@ -306,6 +317,7 @@ update msg model =
 {-| Checks calls for highest value of id.
 
 Returns a new highest id.
+Should become redundant when using actual API.
 
 -}
 createNewCallId : Model -> CallId
@@ -333,6 +345,8 @@ createNewCallId model =
             FromBackend (x + 1)
 
 
+{-| Todo: Call API
+-}
 toggleSubTask : SubTask -> SubTask
 toggleSubTask subTask =
     { subTask
@@ -510,7 +524,7 @@ viewSearchCalls model =
             \call ->
                 if
                     String.contains search (call.who |> String.toLower)
-                        || String.contains search (dateToHumanStr model.timeZone call.when |> String.toLower)
+                        || String.contains search (TimeStuff.dateToHumanStr model.timeZone call.when |> String.toLower)
                         || String.contains search (call.comments |> String.toLower)
                 then
                     True
@@ -656,7 +670,7 @@ viewCalls calls subtasks options =
                     -- Date / time
                     , Ui.column [ Ui.alignTop, Ui.width (Ui.px 300) ]
                         [ Ui.column []
-                            [ Ui.el [ Font.italic ] (Ui.text (dateToHumanStr options.timeZone call.when))
+                            [ Ui.el [ Font.italic ] (Ui.text (TimeStuff.dateToHumanStr options.timeZone call.when))
                             , Ui.el [ Font.bold ] (Ui.text call.who)
                             ]
                         ]
@@ -742,15 +756,6 @@ viewPreSaveSubTasks model =
         model.preSaveSubTasks
 
 
-toTwoDigits : Int -> String
-toTwoDigits i =
-    if i < 10 then
-        "0" ++ String.fromInt i
-
-    else
-        String.fromInt i
-
-
 
 -- HTTP
 
@@ -820,7 +825,7 @@ anyErrorToString err =
 
 
 
--- TIME STUFF
+-- FILTERING CALLS
 
 
 filterCallsFromDay : List Call -> Time.Zone -> Time.Posix -> List Call
@@ -867,186 +872,17 @@ filterCallsBeforeThisWeek calls zone today =
         calls
 
 
-rollbackDays : Int -> Time.Posix -> Time.Posix
-rollbackDays days time =
-    let
-        aDay =
-            24 * 60 * 60 * 1000
-    in
-    (Time.posixToMillis time - days * aDay)
-        |> Time.millisToPosix
-
-
-lastMondayBeforeDate : Time.Zone -> Time.Posix -> Time.Posix
-lastMondayBeforeDate zone time =
-    let
-        intWeekday =
-            Time.toWeekday zone time
-                |> weekDayToInt
-    in
-    rollbackDays intWeekday time
-
-
-oneWeekInMs : Int
-oneWeekInMs =
-    1000 * 60 * 60 * 24 * 7
-
-
-oneDayInMs : Int
-oneDayInMs =
-    1000 * 60 * 60 * 24
-
-
-dateToHumanStr : Time.Zone -> Time.Posix -> String
-dateToHumanStr zone posix =
-    toDutchWeekday (Time.toWeekday zone posix)
-        ++ " "
-        ++ toTwoDigits (Time.toDay zone posix)
-        ++ "/"
-        ++ toDutchMonthNumber (Time.toMonth zone posix)
-        ++ "\n"
-        ++ (Time.toHour zone posix |> String.fromInt)
-        ++ ":"
-        ++ (Time.toMinute zone posix |> toTwoDigits)
-
-
-weekDayToInt : Time.Weekday -> Int
-weekDayToInt day =
-    case day of
-        Time.Mon ->
-            0
-
-        Time.Tue ->
-            1
-
-        Time.Wed ->
-            2
-
-        Time.Thu ->
-            3
-
-        Time.Fri ->
-            4
-
-        Time.Sat ->
-            5
-
-        Time.Sun ->
-            6
-
-
-toDutchMonthStr : Time.Month -> String
-toDutchMonthStr month =
-    case month of
-        Time.Jan ->
-            "januari"
-
-        Time.Feb ->
-            "februari"
-
-        Time.Mar ->
-            "maart"
-
-        Time.Apr ->
-            "april"
-
-        Time.May ->
-            "mei"
-
-        Time.Jun ->
-            "juni"
-
-        Time.Jul ->
-            "juli"
-
-        Time.Aug ->
-            "augustus"
-
-        Time.Sep ->
-            "september"
-
-        Time.Oct ->
-            "oktober"
-
-        Time.Nov ->
-            "november"
-
-        Time.Dec ->
-            "december"
-
-
-toDutchMonthNumber : Time.Month -> String
-toDutchMonthNumber month =
-    case month of
-        Time.Jan ->
-            "01"
-
-        Time.Feb ->
-            "02"
-
-        Time.Mar ->
-            "03"
-
-        Time.Apr ->
-            "04"
-
-        Time.May ->
-            "05"
-
-        Time.Jun ->
-            "06"
-
-        Time.Jul ->
-            "07"
-
-        Time.Aug ->
-            "08"
-
-        Time.Sep ->
-            "09"
-
-        Time.Oct ->
-            "10"
-
-        Time.Nov ->
-            "11"
-
-        Time.Dec ->
-            "12"
-
-
-toDutchWeekday : Time.Weekday -> String
-toDutchWeekday day =
-    case day of
-        Time.Mon ->
-            "Maandag"
-
-        Time.Tue ->
-            "Dinsdag"
-
-        Time.Wed ->
-            "Woensdag"
-
-        Time.Thu ->
-            "Donderdag"
-
-        Time.Fri ->
-            "Vrijdag"
-
-        Time.Sat ->
-            "Zaterdag"
-
-        Time.Sun ->
-            "Zondag"
-
-
 
 -- SUBSCRIPTIONS
 
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    receiveMessage Receive
+    Sub.none
+
+
+
+-- HELPERS
 
 
 type AppColor

@@ -11122,12 +11122,10 @@ var $author$project$Main$init = function (_v0) {
 					$author$project$Main$getCallsAndSubTasks('http://localhost:3000')
 				])));
 };
-var $author$project$Main$Receive = function (a) {
-	return {$: 'Receive', a: a};
-};
-var $author$project$Main$receiveMessage = _Platform_incomingPort('receiveMessage', $elm$json$Json$Decode$int);
+var $elm$core$Platform$Sub$batch = _Platform_batch;
+var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
 var $author$project$Main$subscriptions = function (_v0) {
-	return $author$project$Main$receiveMessage($author$project$Main$Receive);
+	return $elm$core$Platform$Sub$none;
 };
 var $author$project$Main$AddCallWithTime = function (a) {
 	return {$: 'AddCallWithTime', a: a};
@@ -11380,15 +11378,6 @@ var $author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{formVisible: false}),
-					$elm$core$Platform$Cmd$none);
-			case 'Receive':
-				var txt = msg.a;
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							inputComments: $elm$core$String$fromInt(txt)
-						}),
 					$elm$core$Platform$Cmd$none);
 			default:
 				var httpResult = msg.a;
@@ -19039,7 +19028,7 @@ var $elm$time$Time$toDay = F2(
 		return $elm$time$Time$toCivil(
 			A2($elm$time$Time$toAdjustedMinutes, zone, time)).day;
 	});
-var $author$project$Main$toDutchMonthNumber = function (month) {
+var $author$project$TimeStuff$toDutchMonthNumber = function (month) {
 	switch (month.$) {
 		case 'Jan':
 			return '01';
@@ -19067,7 +19056,7 @@ var $author$project$Main$toDutchMonthNumber = function (month) {
 			return '12';
 	}
 };
-var $author$project$Main$toDutchWeekday = function (day) {
+var $author$project$TimeStuff$toDutchWeekday = function (day) {
 	switch (day.$) {
 		case 'Mon':
 			return 'Maandag';
@@ -19146,7 +19135,7 @@ var $elm$time$Time$toMonth = F2(
 				return $elm$time$Time$Dec;
 		}
 	});
-var $author$project$Main$toTwoDigits = function (i) {
+var $author$project$TimeStuff$toTwoDigits = function (i) {
 	return (i < 10) ? ('0' + $elm$core$String$fromInt(i)) : $elm$core$String$fromInt(i);
 };
 var $elm$time$Time$Fri = {$: 'Fri'};
@@ -19182,13 +19171,13 @@ var $elm$time$Time$toWeekday = F2(
 				return $elm$time$Time$Wed;
 		}
 	});
-var $author$project$Main$dateToHumanStr = F2(
+var $author$project$TimeStuff$dateToHumanStr = F2(
 	function (zone, posix) {
-		return $author$project$Main$toDutchWeekday(
-			A2($elm$time$Time$toWeekday, zone, posix)) + (' ' + ($author$project$Main$toTwoDigits(
-			A2($elm$time$Time$toDay, zone, posix)) + ('/' + ($author$project$Main$toDutchMonthNumber(
+		return $author$project$TimeStuff$toDutchWeekday(
+			A2($elm$time$Time$toWeekday, zone, posix)) + (' ' + ($author$project$TimeStuff$toTwoDigits(
+			A2($elm$time$Time$toDay, zone, posix)) + ('/' + ($author$project$TimeStuff$toDutchMonthNumber(
 			A2($elm$time$Time$toMonth, zone, posix)) + ('\n' + ($elm$core$String$fromInt(
-			A2($elm$time$Time$toHour, zone, posix)) + (':' + $author$project$Main$toTwoDigits(
+			A2($elm$time$Time$toHour, zone, posix)) + (':' + $author$project$TimeStuff$toTwoDigits(
 			A2($elm$time$Time$toMinute, zone, posix)))))))));
 	});
 var $mdgriffith$elm_ui$Element$Font$italic = $mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.italic);
@@ -19334,7 +19323,7 @@ var $author$project$Main$viewCalls = F3(
 													_List_fromArray(
 														[$mdgriffith$elm_ui$Element$Font$italic]),
 													$mdgriffith$elm_ui$Element$text(
-														A2($author$project$Main$dateToHumanStr, options.timeZone, call.when))),
+														A2($author$project$TimeStuff$dateToHumanStr, options.timeZone, call.when))),
 													A2(
 													$mdgriffith$elm_ui$Element$el,
 													_List_fromArray(
@@ -19643,7 +19632,7 @@ var $author$project$Main$viewSearchCalls = function (model) {
 			$elm$core$String$contains,
 			search,
 			$elm$core$String$toLower(
-				A2($author$project$Main$dateToHumanStr, model.timeZone, call.when))) || A2(
+				A2($author$project$TimeStuff$dateToHumanStr, model.timeZone, call.when))) || A2(
 			$elm$core$String$contains,
 			search,
 			$elm$core$String$toLower(call.comments)))) ? true : false;
@@ -20006,4 +19995,4 @@ var $author$project$Main$viewDocument = function (model) {
 var $author$project$Main$main = $elm$browser$Browser$document(
 	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$viewDocument});
 _Platform_export({'Main':{'init':$author$project$Main$main(
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.Call":{"args":[],"type":"{ id : Main.CallId, who : String.String, comments : String.String, when : Time.Posix }"},"Main.SubTask":{"args":[],"type":"{ callId : Main.CallId, text : String.String, done : Basics.Bool }"},"Time.Era":{"args":[],"type":"{ start : Basics.Int, offset : Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"InputWhoChanged":["String.String"],"InputCommentsChanged":["String.String"],"InputSubTaskChanged":["String.String"],"InputSearchChanged":["String.String"],"AddPreSaveSubTask":[],"AddCall":[],"AddCallWithTime":["Time.Posix"],"DeletePreSaveSubTask":["Main.SubTask"],"ToggleSubTask":["Main.SubTask"],"ArchiveCall":["Main.Call"],"OpenForm":[],"CloseForm":[],"GetTimeZone":["Time.Zone"],"SetToday":["Time.Posix"],"Receive":["Basics.Int"],"GotCallsAndSubTasks":["Result.Result Http.Error (List.List Main.SubTask)"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Main.CallId":{"args":[],"tags":{"Creating":[],"FromBackend":["Basics.Int"]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Time.Zone":{"args":[],"tags":{"Zone":["Basics.Int","List.List Time.Era"]}}}}})}});}(this));
+	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.Call":{"args":[],"type":"{ id : Main.CallId, who : String.String, comments : String.String, when : Time.Posix }"},"Main.SubTask":{"args":[],"type":"{ callId : Main.CallId, text : String.String, done : Basics.Bool }"},"Time.Era":{"args":[],"type":"{ start : Basics.Int, offset : Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"InputWhoChanged":["String.String"],"InputCommentsChanged":["String.String"],"InputSubTaskChanged":["String.String"],"InputSearchChanged":["String.String"],"AddPreSaveSubTask":[],"AddCall":[],"AddCallWithTime":["Time.Posix"],"DeletePreSaveSubTask":["Main.SubTask"],"ToggleSubTask":["Main.SubTask"],"ArchiveCall":["Main.Call"],"OpenForm":[],"CloseForm":[],"GetTimeZone":["Time.Zone"],"SetToday":["Time.Posix"],"GotCallsAndSubTasks":["Result.Result Http.Error (List.List Main.SubTask)"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Main.CallId":{"args":[],"tags":{"Creating":[],"FromBackend":["Basics.Int"]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"List.List":{"args":["a"],"tags":{}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Time.Zone":{"args":[],"tags":{"Zone":["Basics.Int","List.List Time.Era"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}}}}})}});}(this));
