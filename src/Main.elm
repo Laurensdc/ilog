@@ -408,7 +408,7 @@ view model =
                ]
         )
         (Ui.column
-            [ Ui.width (Ui.fill |> Ui.maximum 1200)
+            [ Ui.width (Ui.fill |> Ui.maximum 1100)
             , Ui.centerX
             , Ui.spacing 16
             ]
@@ -425,7 +425,7 @@ view model =
               else
                 Ui.none
             , if model.inputSearch == "" then
-                viewArchivedCalls model
+                Ui.el [ Ui.width Ui.fill, Ui.paddingEach { top = 128, left = 0, right = 0, bottom = 0 } ] (viewArchivedCalls model)
 
               else
                 Ui.none
@@ -584,7 +584,7 @@ viewUnarchivedCalls model =
             Ui.paddingEach { top = 32, left = 0, right = 0, bottom = 0 }
 
         titleStyles =
-            [ topPadding
+            [ Ui.paddingEach { top = 32, left = 0, right = 0, bottom = 0 }
             , Font.size 22
             , Font.regular
             ]
@@ -648,17 +648,7 @@ viewArchivedCalls : Model -> Ui.Element Msg
 viewArchivedCalls model =
     -- Archive
     if List.length model.archivedCalls > 0 then
-        Ui.column [ Ui.width Ui.fill ]
-            [ Ui.el
-                [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 }
-                , Font.size 24
-                , Font.bold
-                ]
-                (Ui.text
-                    "Archief"
-                )
-            , viewCalls model.archivedCalls model.subTasks { archived = True, timeZone = model.timeZone, today = model.today }
-            ]
+        viewCalls model.archivedCalls model.subTasks { archived = True, timeZone = model.timeZone, today = model.today }
 
     else
         Ui.none
@@ -679,24 +669,32 @@ viewCalls calls subtasks options =
                         GT
                 )
                 calls
+
+        archivedStyles =
+            if options.archived == True then
+                [ Font.color <| darken <| darken <| darken <| color Text
+                ]
+
+            else
+                []
     in
     Ui.column
         [ Ui.width Ui.fill
+        , Ui.spacingXY 0 16
         ]
         (List.map
             (\call ->
                 Ui.row
-                    [ Ui.width Ui.fill
-                    , Ui.paddingXY 0 16
-                    , if options.archived == True then
-                        Font.strike
-
-                      else
-                        noAttr
-                    ]
+                    (archivedStyles
+                        ++ [ Ui.width Ui.fill
+                           , Ui.paddingXY 0 32
+                           , Border.widthEach { top = 0, left = 0, right = 0, bottom = 1 }
+                           , Border.color <| lighten <| lighten <| color Bg
+                           ]
+                    )
                     [ -- Icon
                       Ui.el
-                        [ Ui.width (Ui.px 32)
+                        [ Ui.width (Ui.px 48)
                         , Ui.alignTop
                         , Element.Events.onClick (ArchiveCall call)
                         , Ui.pointer
@@ -709,19 +707,29 @@ viewCalls calls subtasks options =
                         )
 
                     -- Date / time
-                    , Ui.column [ Ui.alignTop, Ui.width Ui.fill ]
+                    , Ui.column [ Ui.alignTop ]
                         [ Ui.column []
-                            [ Ui.el [ Font.italic ] (Ui.text (TimeStuff.toDutchWeekday options.timeZone call.when))
-                            , Ui.el [ Font.bold, Font.size 24 ] (Ui.text call.who)
+                            [ Ui.el [ Font.bold, Font.size 22, Ui.paddingEach { left = 0, right = 0, top = 0, bottom = 8 } ]
+                                (Ui.text call.who)
+                            , Ui.row [ Font.italic ]
+                                [ Ui.el [ Ui.width <| Ui.px 140 ] (Ui.text (TimeStuff.toDutchWeekday options.timeZone call.when))
+                                , Ui.el [ Ui.width <| Ui.px 80 ] (Ui.text (TimeStuff.toHumanDate options.timeZone call.when))
+                                , Ui.el [] (Ui.text (TimeStuff.toHumanTime options.timeZone call.when))
+                                ]
+                            , Ui.paragraph [ Ui.paddingEach { top = 32, left = 0, right = 0, bottom = 0 } ] [ Ui.text call.comments ]
                             ]
                         ]
 
                     -- Comments & SubTasks
-                    , Ui.column [ Ui.alignTop, Ui.spacingXY 0 16 ]
-                        ([ Ui.el [] (Ui.text call.comments)
-                         ]
-                            ++ viewSubTasks call subtasks
-                        )
+                    , Ui.column
+                        [ Ui.alignTop
+                        , Ui.spacingXY 0 8
+                        , Ui.alignRight
+                        , Ui.width <| Ui.px 400
+                        , Font.alignLeft
+                        , Ui.paddingEach { top = 28, left = 0, right = 0, bottom = 0 }
+                        ]
+                        (viewSubTasks call subtasks)
                     ]
             )
             sortedCalls
@@ -748,7 +756,7 @@ viewSubTasks call subtasks =
                 [ Element.Events.onClick (ToggleSubTask subTask)
                 , Ui.pointer
                 ]
-                [ Ui.el [ Ui.paddingEach { top = 0, left = 0, right = 4, bottom = 0 } ]
+                [ Ui.el [ Ui.paddingEach { top = 0, left = 0, right = 8, bottom = 0 } ]
                     (if subTask.done then
                         Icon.checkSquareFilled [ iconsize ]
 
@@ -756,10 +764,10 @@ viewSubTasks call subtasks =
                         Icon.borderOutlined [ iconsize ]
                     )
                 , if subTask.done then
-                    Ui.el [ Font.strike ] (Ui.text subTask.text)
+                    Ui.paragraph [ Font.strike ] [ Ui.text subTask.text ]
 
                   else
-                    Ui.text subTask.text
+                    Ui.paragraph [] [ Ui.text subTask.text ]
                 ]
         )
         filteredSubTasks
