@@ -92,6 +92,9 @@ type alias Model =
       inputWho : String
     , inputComments : String
     , inputSubTask : String
+    , preSaveSubTasks : List SubTask
+
+    --
     , inputSearch : String
     , formVisible : Bool
 
@@ -100,7 +103,6 @@ type alias Model =
     , archivedCalls : List Call
     , searchResults : List Call
     , subTasks : List SubTask
-    , preSaveSubTasks : List SubTask
 
     -- Time stuff
     , timeZone : Time.Zone
@@ -113,18 +115,22 @@ type alias Model =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { -- Input stuff
+    ( { -- Form stuff
         inputWho = ""
       , inputComments = ""
       , inputSubTask = ""
-      , inputSearch = ""
+      , preSaveSubTasks = []
+
+      -- Not in the type alias of Form
       , formVisible = False
+
+      -- Other inputs
+      , inputSearch = ""
 
       -- Calls & subtasks (data)
       , calls = dummyCalls
       , subTasks = []
       , archivedCalls = []
-      , preSaveSubTasks = []
       , searchResults = []
 
       -- Time stuff
@@ -140,6 +146,15 @@ init _ =
         , getCallsAndSubTasks "http://localhost:3000"
         ]
     )
+
+
+type alias FormInputs r =
+    { r
+        | inputWho : String
+        , inputComments : String
+        , inputSubTask : String
+        , preSaveSubTasks : List SubTask
+    }
 
 
 type alias Call =
@@ -177,20 +192,25 @@ port receiveMessage : (Int -> msg) -> Sub msg
 
 
 type Msg
-    = InputWhoChanged String
+    = -- Input stuff
+      InputWhoChanged String
     | InputCommentsChanged String
     | InputSubTaskChanged String
     | InputSearchChanged String
+      -- Call & subTask stuff
     | AddPreSaveSubTask
     | AddCall
     | AddCallWithTime Time.Posix
     | DeletePreSaveSubTask SubTask
     | ToggleSubTask SubTask
     | ArchiveCall Call
+      -- Form stuff
     | OpenForm
     | CloseForm
+      -- Time stuff
     | GetTimeZone Time.Zone
     | SetToday Time.Posix
+      -- API stuff
     | GotCallsAndSubTasks (Result Http.Error (List SubTask))
 
 
@@ -306,12 +326,9 @@ update msg model =
                 Ok subTasks ->
                     ( { model | subTasks = subTasks }, Cmd.none )
 
+                -- TODO : Handle errors in UI
                 Err err ->
                     Debug.log (anyErrorToString err) ( model, Cmd.none )
-
-
-
--- TODO : Handle errors
 
 
 {-| Checks calls for highest value of id.
@@ -368,28 +385,7 @@ view model =
     let
         overlayFormIfVisible =
             if model.formVisible == True then
-                Ui.inFront
-                    (Ui.el
-                        [ Background.color <| Ui.rgba 1 1 1 0.7
-                        , Ui.width Ui.fill
-                        , Ui.height Ui.fill
-                        , Font.center
-
-                        -- Also clicking anywhere on the screen (but not on the form) should close the form
-                        , Ui.behindContent (Ui.el [ Ui.width Ui.fill, Ui.height Ui.fill, Element.Events.onClick CloseForm ] Ui.none)
-                        ]
-                        (Ui.column
-                            [ Ui.centerX
-                            , Ui.centerY
-                            , Font.alignLeft
-                            , Ui.spacing 16
-                            , Background.color <| Ui.rgba 0 0 0 1
-                            , Ui.paddingXY 56 48
-                            , Border.rounded 32
-                            ]
-                            (viewForm model)
-                        )
-                    )
+                viewFullScreenOverlay model
 
             else
                 -- Nothing
@@ -455,7 +451,33 @@ view model =
         )
 
 
-viewForm : Model -> List (Ui.Element Msg)
+viewFullScreenOverlay : FormInputs r -> Ui.Attribute Msg
+viewFullScreenOverlay model =
+    Ui.inFront
+        (Ui.el
+            [ Background.color <| Ui.rgba 1 1 1 0.7
+            , Ui.width Ui.fill
+            , Ui.height Ui.fill
+            , Font.center
+
+            -- Also clicking anywhere on the screen (but not on the form) should close the form
+            , Ui.behindContent (Ui.el [ Ui.width Ui.fill, Ui.height Ui.fill, Element.Events.onClick CloseForm ] Ui.none)
+            ]
+            (Ui.column
+                [ Ui.centerX
+                , Ui.centerY
+                , Font.alignLeft
+                , Ui.spacing 16
+                , Background.color <| Ui.rgba 0 0 0 1
+                , Ui.paddingXY 56 48
+                , Border.rounded 32
+                ]
+                (viewForm model)
+            )
+        )
+
+
+viewForm : FormInputs r -> List (Ui.Element Msg)
 viewForm model =
     -- Title
     [ -- Close icon "x"
@@ -744,7 +766,7 @@ viewSubTasks call subtasks =
 
 {-| Subtasks before they are submitted
 -}
-viewPreSaveSubTasks : Model -> List (Ui.Element Msg)
+viewPreSaveSubTasks : FormInputs r -> List (Ui.Element Msg)
 viewPreSaveSubTasks model =
     List.map
         (\subTask ->
