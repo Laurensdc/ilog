@@ -545,7 +545,9 @@ viewSearchCalls model =
             \call ->
                 if
                     String.contains search (call.who |> String.toLower)
-                        || String.contains search (TimeStuff.dateToHumanStr model.timeZone call.when |> String.toLower)
+                        || String.contains search (TimeStuff.toDutchWeekday model.timeZone call.when |> String.toLower)
+                        || String.contains search (TimeStuff.toHumanDate model.timeZone call.when |> String.toLower)
+                        || String.contains search (TimeStuff.toHumanTime model.timeZone call.when |> String.toLower)
                         || String.contains search (call.comments |> String.toLower)
                 then
                     True
@@ -567,8 +569,8 @@ viewSearchCalls model =
                 , Font.bold
                 ]
                 (Ui.text "Zoekresultaten")
-            , Ui.column [] <| viewCalls foundCalls model.subTasks { archived = False, timeZone = model.timeZone, today = model.today }
-            , Ui.column [] <| viewCalls foundArchivedCalls model.subTasks { archived = True, timeZone = model.timeZone, today = model.today }
+            , viewCalls foundCalls model.subTasks { archived = False, timeZone = model.timeZone, today = model.today }
+            , viewCalls foundArchivedCalls model.subTasks { archived = True, timeZone = model.timeZone, today = model.today }
             ]
 
     else
@@ -579,55 +581,63 @@ viewUnarchivedCalls : Model -> Ui.Element Msg
 viewUnarchivedCalls model =
     let
         topPadding =
-            Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 }
+            Ui.paddingEach { top = 32, left = 0, right = 0, bottom = 0 }
+
+        titleStyles =
+            [ topPadding
+            , Font.size 22
+            , Font.regular
+            ]
 
         callsToday =
-            viewCalls (filterCallsFromDay model.calls model.timeZone model.today)
+            filterCallsFromDay model.calls model.timeZone model.today
+
+        viewCallsToday =
+            viewCalls callsToday
                 model.subTasks
                 { archived = False, timeZone = model.timeZone, today = model.today }
 
         callsThisWeek =
-            viewCalls (filterCallsFromThisWeekButNotToday model.calls model.timeZone model.today)
+            filterCallsFromThisWeekButNotToday model.calls model.timeZone model.today
+
+        viewCallsThisWeek =
+            viewCalls callsThisWeek
                 model.subTasks
                 { archived = False, timeZone = model.timeZone, today = model.today }
 
         callsBeforeThisWeek =
-            viewCalls (filterCallsBeforeThisWeek model.calls model.timeZone model.today)
+            filterCallsBeforeThisWeek model.calls model.timeZone model.today
+
+        viewCallsBeforeThisWeek =
+            viewCalls callsBeforeThisWeek
                 model.subTasks
                 { archived = False, timeZone = model.timeZone, today = model.today }
     in
     if List.length model.calls > 0 then
-        Ui.column []
-            [ Ui.el
-                [ topPadding
-                , Font.size 24
-                , Font.bold
-                ]
-                (Ui.text "Gesprekken / todo's")
-
-            -- Today
-            , if List.length callsToday > 0 then
-                Ui.el [ Font.italic, topPadding ] (Ui.text "Vandaag")
+        Ui.column [ Ui.width Ui.fill ]
+            [ -- Today
+              if List.length callsToday > 0 then
+                Ui.el titleStyles (Ui.text "Vandaag")
 
               else
                 Ui.none
-            , Ui.column [] <| callsToday
+            , viewCallsToday
 
             -- Week
             , if List.length callsThisWeek > 0 then
-                Ui.el [ Font.italic, topPadding ] (Ui.text "Eerder deze week")
+                Ui.el titleStyles (Ui.text "Eerder deze week")
 
               else
                 Ui.none
-            , Ui.column [] <| callsThisWeek
+            , viewCallsThisWeek
 
             -- Before that
             , if List.length callsBeforeThisWeek > 0 then
-                Ui.el [ Font.italic, topPadding ] (Ui.text "Heel erg lang geleden...")
+                Ui.el titleStyles (Ui.text "Gesprekken uit een ver verleden")
 
               else
                 Ui.none
-            , Ui.column [] <| callsBeforeThisWeek
+            , viewCallsBeforeThisWeek
             ]
 
     else
@@ -638,7 +648,7 @@ viewArchivedCalls : Model -> Ui.Element Msg
 viewArchivedCalls model =
     -- Archive
     if List.length model.archivedCalls > 0 then
-        Ui.column []
+        Ui.column [ Ui.width Ui.fill ]
             [ Ui.el
                 [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 }
                 , Font.size 24
@@ -647,14 +657,16 @@ viewArchivedCalls model =
                 (Ui.text
                     "Archief"
                 )
-            , Ui.column [] <| viewCalls model.archivedCalls model.subTasks { archived = True, timeZone = model.timeZone, today = model.today }
+            , viewCalls model.archivedCalls model.subTasks { archived = True, timeZone = model.timeZone, today = model.today }
             ]
 
     else
         Ui.none
 
 
-viewCalls : List Call -> List SubTask -> { archived : Bool, timeZone : Time.Zone, today : Time.Posix } -> List (Ui.Element Msg)
+{-| Core viewCalls function that's being used by viewSearchCalls, viewArchivedCalls, viewArchivedCalls..
+-}
+viewCalls : List Call -> List SubTask -> { archived : Bool, timeZone : Time.Zone, today : Time.Posix } -> Ui.Element Msg
 viewCalls calls subtasks options =
     let
         sortedCalls =
@@ -668,19 +680,27 @@ viewCalls calls subtasks options =
                 )
                 calls
     in
-    List.map
-        (\call ->
-            Ui.row
-                [ Ui.paddingXY 0 16
-                , if options.archived == True then
-                    Font.strike
+    Ui.column
+        [ Ui.width Ui.fill
+        ]
+        (List.map
+            (\call ->
+                Ui.row
+                    [ Ui.width Ui.fill
+                    , Ui.paddingXY 0 16
+                    , if options.archived == True then
+                        Font.strike
 
-                  else
-                    noAttr
-                ]
-                [ -- The little ball to click
-                  Ui.row []
-                    [ Ui.el [ Ui.width (Ui.px 32), Ui.alignTop, Element.Events.onClick (ArchiveCall call) ]
+                      else
+                        noAttr
+                    ]
+                    [ -- Icon
+                      Ui.el
+                        [ Ui.width (Ui.px 32)
+                        , Ui.alignTop
+                        , Element.Events.onClick (ArchiveCall call)
+                        , Ui.pointer
+                        ]
                         (if options.archived == True then
                             Icon.checkSquareFilled [ iconsize ]
 
@@ -689,10 +709,10 @@ viewCalls calls subtasks options =
                         )
 
                     -- Date / time
-                    , Ui.column [ Ui.alignTop, Ui.width (Ui.px 300) ]
+                    , Ui.column [ Ui.alignTop, Ui.width Ui.fill ]
                         [ Ui.column []
-                            [ Ui.el [ Font.italic ] (Ui.text (TimeStuff.dateToHumanStr options.timeZone call.when))
-                            , Ui.el [ Font.bold ] (Ui.text call.who)
+                            [ Ui.el [ Font.italic ] (Ui.text (TimeStuff.toDutchWeekday options.timeZone call.when))
+                            , Ui.el [ Font.bold, Font.size 24 ] (Ui.text call.who)
                             ]
                         ]
 
@@ -703,9 +723,9 @@ viewCalls calls subtasks options =
                             ++ viewSubTasks call subtasks
                         )
                     ]
-                ]
+            )
+            sortedCalls
         )
-        sortedCalls
 
 
 viewSubTasks : Call -> List SubTask -> List (Ui.Element Msg)
