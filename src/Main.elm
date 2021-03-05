@@ -804,7 +804,7 @@ callsDecoder =
                 )
                 (Json.Decode.field "who" Json.Decode.string)
                 (Json.Decode.field "comments" Json.Decode.string)
-                (Json.Decode.field "created_at" Json.Decode.Extra.datetime)
+                (Json.Decode.field "createdAt" Json.Decode.Extra.datetime)
              -- How to split this into archived calls???
             )
         )
@@ -815,7 +815,7 @@ subTasksDecoder =
     Json.Decode.field "subTasks"
         (Json.Decode.list
             (Json.Decode.map3 SubTask
-                (Json.Decode.field "call_id" Json.Decode.int
+                (Json.Decode.field "callId" Json.Decode.int
                     |> Json.Decode.andThen
                         (\id ->
                             Json.Decode.succeed (FromBackend id)

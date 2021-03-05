@@ -1,28 +1,18 @@
 const express = require('express');
 const h = require('../helpers');
 const router = express.Router();
+const { Call, SubTask } = require('../models');
 
 /**
  * Returns call with included subtasks
  */
 router.get('/', async (req, res) => {
-  const callsSql = `
-    SELECT * FROM calls
-  `;
-
-  const subTasksSql = `
-    SELECT * FROM subtasks
-  `;
-
   try {
-    const callsSqlResult = await h.db.query(callsSql);
-    const calls = h.db.sqlToArr(callsSqlResult);
-
-    const subTasksSqlResult = await h.db.query(subTasksSql);
-    const subTasks = h.db.sqlToArr(subTasksSqlResult);
+    const calls = await Call.findAll();
+    const subTasks = await SubTask.findAll();
 
     return res.status(200).json({
-      message: 'message',
+      message: 'Retrieved all calls & subTasks',
       calls,
       subTasks,
     });
@@ -78,35 +68,20 @@ router.put('/add', async (req, res) => {
 
   /** Inserting **/
   try {
-    const insertCallSQL = `
-    INSERT INTO calls (who, comments, created_at, is_archived)
-      VALUES ($1, $2, $3, FALSE)
-      RETURNING id;
-    `;
-
-    const callResult = await h.db.query(insertCallSQL, [
-      call.who,
-      call.comments,
-      new Date(call.when),
-    ]);
-
-    const callId = h.db.sqlToArr(callResult)[0].id;
+    const dbCall = await Call.create({
+      who: call.who,
+      comments: call.comments,
+      when: new Date(call.when),
+    });
+    const callId = dbCall.id;
 
     const subTasks = getParsedSubTasks(callId, call.subTasks);
-    const prepSubtaskInserts = h.db.prepareInserts(subTasks);
-
-    let insertSubTasksSQL = `
-    INSERT INTO subtasks (call_id, text, done)
-      VALUES 
-  ${prepSubtaskInserts.values}
-    ;     
-    `;
-
-    await h.db.query(insertSubTasksSQL, prepSubtaskInserts.params);
+    const dbSubTasks = await SubTask.bulkCreate(subTasks);
 
     return res.status(200).json({
       message: 'Added call to DB',
-      callId,
+      dbCall,
+      dbSubTasks,
     });
   } catch (err) {
     h.print.err(err);
@@ -132,13 +107,13 @@ function getParsedSubTasks(callId, subTasks) {
           // subTasks.done is present & is bool?
           if ('done' in st && typeof st.done === 'boolean') {
             return {
-              call_id: callId,
+              callId: callId,
               text,
               done: st.done,
             };
           } else {
             return {
-              call_id: callId,
+              callId: callId,
               text,
               done: false,
             };
