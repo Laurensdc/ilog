@@ -1,4 +1,5 @@
 const h = require('../../helpers');
+const db = require('../../helpers/node-postgres');
 
 const callSeed = `
 INSERT INTO
@@ -22,10 +23,10 @@ VALUES
   (3, 'Pizza bestellen', FALSE, NOW(), NOW())
 `;
 
-module.exports = h.db
+module.exports = db
   .query(callSeed)
   .then(() => {
-    return h.db.query(subtasksSeed);
+    return db.query(subtasksSeed);
   })
   .then(() => {
     h.print.colored('Succesfully seeded calls & subtasks\n', 'green');
