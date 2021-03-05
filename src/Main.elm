@@ -448,12 +448,11 @@ view model =
 viewSearchbar : String -> Ui.Element Msg
 viewSearchbar text =
     Input.text
-        [ Font.color <| color TextInverted
-        , Ui.paddingXY 16 8
-        , Ui.width (Ui.px 320)
-        , Ui.alignRight
-        , Border.rounded 4
-        ]
+        (textInputStyles
+            ++ [ Ui.width (Ui.px 320)
+               , Ui.alignRight
+               ]
+        )
         { onChange = InputSearchChanged
         , text = text
         , placeholder = Just (Input.placeholder [] (Ui.text "Zoek in gesprekken"))
@@ -465,7 +464,7 @@ viewFullScreenOverlay : FormStuff r -> Ui.Attribute Msg
 viewFullScreenOverlay model =
     Ui.inFront
         (Ui.el
-            [ Background.color <| Ui.rgba 1 1 1 0.7
+            [ Background.color <| Ui.rgba 0.2 0.2 0.2 0.8
             , Ui.width Ui.fill
             , Ui.height Ui.fill
             , Font.center
@@ -479,8 +478,8 @@ viewFullScreenOverlay model =
                 , Font.alignLeft
                 , Ui.spacing 16
                 , Background.color <| color Bg
-                , Ui.paddingXY 56 48
-                , Border.rounded 32
+                , Ui.paddingEach { left = 32, right = 32, top = 48, bottom = 56 }
+                , Border.rounded 16
                 ]
                 (viewForm model)
             )
@@ -499,10 +498,10 @@ viewForm model =
         ]
     , --  Client
       Input.text
-        [ Font.color <| color TextInverted
-        , Ui.width (Ui.shrink |> Ui.minimum 200)
-        , Input.focusedOnLoad
-        ]
+        (textInputStyles
+            ++ [ Ui.width (Ui.px 240)
+               ]
+        )
         { onChange = InputWhoChanged
         , text = model.inputWho
         , placeholder = Just (Input.placeholder [] (Ui.text "Jef van de Carrefour"))
@@ -511,29 +510,31 @@ viewForm model =
 
     --  Comments
     , Input.multiline
-        [ Font.color <| color TextInverted
-        , Ui.width (Ui.shrink |> Ui.minimum 600)
-        , Ui.height <| Ui.px 120
-        ]
+        (textInputStyles
+            ++ [ Ui.width (Ui.shrink |> Ui.minimum 600)
+               , Ui.height <| Ui.px 120
+               ]
+        )
         { onChange = InputCommentsChanged
         , text = model.inputComments
         , placeholder = Nothing
-        , label = Input.labelAbove [] <| Ui.text "Opmerkingen"
+        , label = Input.labelAbove [] <| Ui.text "Notities"
         , spellcheck = True
         }
 
     -- Pre Save SubTasks
     , Ui.row [ Ui.width (Ui.shrink |> Ui.minimum 200) ]
         [ Input.text
-            [ Font.color <| color TextInverted
-            , onEnter AddPreSaveSubTask
-            , Ui.htmlAttribute
-                (Html.Events.onBlur AddPreSaveSubTask)
-            ]
+            (textInputStyles
+                ++ [ onEnter AddPreSaveSubTask
+                   , Ui.htmlAttribute
+                        (Html.Events.onBlur AddPreSaveSubTask)
+                   ]
+            )
             { onChange = InputSubTaskChanged
             , text = model.inputSubTask
-            , placeholder = Nothing
-            , label = Input.labelAbove [] <| Ui.text "Taak toevoegen"
+            , placeholder = Just (Input.placeholder [] (Ui.text "Taak toevoegen"))
+            , label = Input.labelAbove [] <| Ui.text "Taken"
             }
         ]
     , Ui.column [] <| viewPreSaveSubTasks model
@@ -801,6 +802,14 @@ h2Styles =
     [ Ui.paddingEach { top = 32, left = 0, right = 0, bottom = 0 }
     , Font.size 22
     , Font.regular
+    ]
+
+
+textInputStyles : List (Ui.Attribute msg)
+textInputStyles =
+    [ Font.color <| color TextInverted
+    , Ui.paddingXY 16 8
+    , Border.rounded 4
     ]
 
 

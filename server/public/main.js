@@ -18349,7 +18349,6 @@ var $author$project$Main$InputSubTaskChanged = function (a) {
 var $author$project$Main$InputWhoChanged = function (a) {
 	return {$: 'InputWhoChanged', a: a};
 };
-var $author$project$Main$TextInverted = {$: 'TextInverted'};
 var $lemol$ant_design_icons_elm$Ant$Icons$Svg$CloseCircleOutlined$viewWithAttributes = function (attributes) {
 	return A2(
 		$elm$svg$Svg$svg,
@@ -18381,9 +18380,6 @@ var $lemol$ant_design_icons_elm$Ant$Icons$Svg$closeCircleOutlined = $lemol$ant_d
 var $lemol$ant_design_icons_elm_ui$Ant$Icons$closeCircleOutlined = function (attrs) {
 	return A2($lemol$ant_design_icons_elm_ui$Ant$Icon$icon, attrs, $lemol$ant_design_icons_elm$Ant$Icons$Svg$closeCircleOutlined);
 };
-var $elm$html$Html$Attributes$autofocus = $elm$html$Html$Attributes$boolProperty('autofocus');
-var $mdgriffith$elm_ui$Element$Input$focusedOnLoad = $mdgriffith$elm_ui$Internal$Model$Attr(
-	$elm$html$Html$Attributes$autofocus(true));
 var $mdgriffith$elm_ui$Element$Input$Above = {$: 'Above'};
 var $mdgriffith$elm_ui$Element$Input$Label = F3(
 	function (a, b, c) {
@@ -19213,6 +19209,14 @@ var $mdgriffith$elm_ui$Element$Input$text = $mdgriffith$elm_ui$Element$Input$tex
 		spellchecked: false,
 		type_: $mdgriffith$elm_ui$Element$Input$TextInputNode('text')
 	});
+var $author$project$Main$TextInverted = {$: 'TextInverted'};
+var $author$project$Main$textInputStyles = _List_fromArray(
+	[
+		$mdgriffith$elm_ui$Element$Font$color(
+		$author$project$Main$color($author$project$Main$TextInverted)),
+		A2($mdgriffith$elm_ui$Element$paddingXY, 16, 8),
+		$mdgriffith$elm_ui$Element$Border$rounded(4)
+	]);
 var $author$project$Main$DeletePreSaveSubTask = function (a) {
 	return {$: 'DeletePreSaveSubTask', a: a};
 };
@@ -19308,14 +19312,13 @@ var $author$project$Main$viewForm = function (model) {
 				])),
 			A2(
 			$mdgriffith$elm_ui$Element$Input$text,
-			_List_fromArray(
-				[
-					$mdgriffith$elm_ui$Element$Font$color(
-					$author$project$Main$color($author$project$Main$TextInverted)),
-					$mdgriffith$elm_ui$Element$width(
-					A2($mdgriffith$elm_ui$Element$minimum, 200, $mdgriffith$elm_ui$Element$shrink)),
-					$mdgriffith$elm_ui$Element$Input$focusedOnLoad
-				]),
+			_Utils_ap(
+				$author$project$Main$textInputStyles,
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$width(
+						$mdgriffith$elm_ui$Element$px(240))
+					])),
 			{
 				label: A2(
 					$mdgriffith$elm_ui$Element$Input$labelAbove,
@@ -19331,20 +19334,20 @@ var $author$project$Main$viewForm = function (model) {
 			}),
 			A2(
 			$mdgriffith$elm_ui$Element$Input$multiline,
-			_List_fromArray(
-				[
-					$mdgriffith$elm_ui$Element$Font$color(
-					$author$project$Main$color($author$project$Main$TextInverted)),
-					$mdgriffith$elm_ui$Element$width(
-					A2($mdgriffith$elm_ui$Element$minimum, 600, $mdgriffith$elm_ui$Element$shrink)),
-					$mdgriffith$elm_ui$Element$height(
-					$mdgriffith$elm_ui$Element$px(120))
-				]),
+			_Utils_ap(
+				$author$project$Main$textInputStyles,
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$width(
+						A2($mdgriffith$elm_ui$Element$minimum, 600, $mdgriffith$elm_ui$Element$shrink)),
+						$mdgriffith$elm_ui$Element$height(
+						$mdgriffith$elm_ui$Element$px(120))
+					])),
 			{
 				label: A2(
 					$mdgriffith$elm_ui$Element$Input$labelAbove,
 					_List_Nil,
-					$mdgriffith$elm_ui$Element$text('Opmerkingen')),
+					$mdgriffith$elm_ui$Element$text('Notities')),
 				onChange: $author$project$Main$InputCommentsChanged,
 				placeholder: $elm$core$Maybe$Nothing,
 				spellcheck: true,
@@ -19361,21 +19364,25 @@ var $author$project$Main$viewForm = function (model) {
 				[
 					A2(
 					$mdgriffith$elm_ui$Element$Input$text,
-					_List_fromArray(
-						[
-							$mdgriffith$elm_ui$Element$Font$color(
-							$author$project$Main$color($author$project$Main$TextInverted)),
-							$author$project$Main$onEnter($author$project$Main$AddPreSaveSubTask),
-							$mdgriffith$elm_ui$Element$htmlAttribute(
-							$elm$html$Html$Events$onBlur($author$project$Main$AddPreSaveSubTask))
-						]),
+					_Utils_ap(
+						$author$project$Main$textInputStyles,
+						_List_fromArray(
+							[
+								$author$project$Main$onEnter($author$project$Main$AddPreSaveSubTask),
+								$mdgriffith$elm_ui$Element$htmlAttribute(
+								$elm$html$Html$Events$onBlur($author$project$Main$AddPreSaveSubTask))
+							])),
 					{
 						label: A2(
 							$mdgriffith$elm_ui$Element$Input$labelAbove,
 							_List_Nil,
-							$mdgriffith$elm_ui$Element$text('Taak toevoegen')),
+							$mdgriffith$elm_ui$Element$text('Taken')),
 						onChange: $author$project$Main$InputSubTaskChanged,
-						placeholder: $elm$core$Maybe$Nothing,
+						placeholder: $elm$core$Maybe$Just(
+							A2(
+								$mdgriffith$elm_ui$Element$Input$placeholder,
+								_List_Nil,
+								$mdgriffith$elm_ui$Element$text('Taak toevoegen'))),
 						text: model.inputSubTask
 					})
 				])),
@@ -19393,7 +19400,7 @@ var $author$project$Main$viewFullScreenOverlay = function (model) {
 			_List_fromArray(
 				[
 					$mdgriffith$elm_ui$Element$Background$color(
-					A4($mdgriffith$elm_ui$Element$rgba, 1, 1, 1, 0.7)),
+					A4($mdgriffith$elm_ui$Element$rgba, 0.2, 0.2, 0.2, 0.8)),
 					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
 					$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
 					$mdgriffith$elm_ui$Element$Font$center,
@@ -19418,8 +19425,9 @@ var $author$project$Main$viewFullScreenOverlay = function (model) {
 						$mdgriffith$elm_ui$Element$spacing(16),
 						$mdgriffith$elm_ui$Element$Background$color(
 						$author$project$Main$color($author$project$Main$Bg)),
-						A2($mdgriffith$elm_ui$Element$paddingXY, 56, 48),
-						$mdgriffith$elm_ui$Element$Border$rounded(32)
+						$mdgriffith$elm_ui$Element$paddingEach(
+						{bottom: 56, left: 32, right: 32, top: 48}),
+						$mdgriffith$elm_ui$Element$Border$rounded(16)
 					]),
 				$author$project$Main$viewForm(model))));
 };
@@ -19482,16 +19490,14 @@ var $mdgriffith$elm_ui$Element$Input$labelHidden = $mdgriffith$elm_ui$Element$In
 var $author$project$Main$viewSearchbar = function (text) {
 	return A2(
 		$mdgriffith$elm_ui$Element$Input$text,
-		_List_fromArray(
-			[
-				$mdgriffith$elm_ui$Element$Font$color(
-				$author$project$Main$color($author$project$Main$TextInverted)),
-				A2($mdgriffith$elm_ui$Element$paddingXY, 16, 8),
-				$mdgriffith$elm_ui$Element$width(
-				$mdgriffith$elm_ui$Element$px(320)),
-				$mdgriffith$elm_ui$Element$alignRight,
-				$mdgriffith$elm_ui$Element$Border$rounded(4)
-			]),
+		_Utils_ap(
+			$author$project$Main$textInputStyles,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$width(
+					$mdgriffith$elm_ui$Element$px(320)),
+					$mdgriffith$elm_ui$Element$alignRight
+				])),
 		{
 			label: $mdgriffith$elm_ui$Element$Input$labelHidden('Zoeken'),
 			onChange: $author$project$Main$InputSearchChanged,
