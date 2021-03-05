@@ -57,6 +57,7 @@ type alias Model =
 
         -- Will need this to do http requests
         , backendUrl : String
+        , loading : Bool
         }
 
 
@@ -86,6 +87,7 @@ init _ =
 
       -- Will need this to do http requests
       , backendUrl = "http://localhost:3000"
+      , loading = True
       }
     , Cmd.batch
         [ Task.perform GetTimeZone Time.here
@@ -159,6 +161,7 @@ type Msg
     | SetToday Time.Posix
       -- API stuff
     | GotCallsAndSubTasks (Result Http.Error { calls : List Call, subTasks : List SubTask })
+    | AddedCall (Result Http.Error { dbCall : Call }) --, dbSubTasks : List SubTask })
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -192,29 +195,38 @@ update msg model =
             ( model, Task.perform AddCallWithTime Time.now )
 
         AddCallWithTime time ->
-            let
-                newCallId =
-                    createNewCallId model
-            in
-            ( { model
-                | calls =
-                    model.calls
-                        ++ [ { -- TODO -> actually from backend
-                               id = newCallId
-                             , who = model.inputWho
-                             , comments = model.inputComments
-                             , when = time
-                             }
-                           ]
-                , subTasks = model.subTasks ++ List.map (\subTask -> { subTask | callId = newCallId }) model.preSaveSubTasks
-                , preSaveSubTasks = []
-                , inputWho = ""
-                , inputComments = ""
-                , formVisible = False
-              }
-            , Cmd.none
+            ( { model | loading = True }
+            , addCall model.backendUrl
+                { id = Creating
+                , who = model.inputWho
+                , comments = model.inputComments
+                , when = time
+                }
+                []
             )
 
+        -- let
+        --     newCallId =
+        --         createNewCallId model
+        -- in
+        -- ( { model
+        --     | calls =
+        --         model.calls
+        --             ++ [ { -- TODO -> actually from backend
+        --                    id = newCallId
+        --                  , who = model.inputWho
+        --                  , comments = model.inputComments
+        --                  , when = time
+        --                  }
+        --                ]
+        --     , subTasks = model.subTasks ++ List.map (\subTask -> { subTask | callId = newCallId }) model.preSaveSubTasks
+        --     , preSaveSubTasks = []
+        --     , inputWho = ""
+        --     , inputComments = ""
+        --     , formVisible = False
+        --   }
+        -- , Cmd.none
+        -- )
         DeletePreSaveSubTask subtask ->
             ( { model
                 | preSaveSubTasks = List.filter (\s -> s /= subtask) model.preSaveSubTasks
@@ -268,10 +280,37 @@ update msg model =
         CloseForm ->
             ( { model | formVisible = False }, Cmd.none )
 
+        -- HTTP msgs
         GotCallsAndSubTasks httpResult ->
             case httpResult of
                 Ok result ->
-                    ( { model | calls = result.calls, subTasks = result.subTasks }, Cmd.none )
+                    ( { model
+                        | calls = result.calls
+                        , subTasks = result.subTasks
+                        , loading = False
+                      }
+                    , Cmd.none
+                    )
+
+                -- TODO : Handle errors in UI
+                Err err ->
+                    Debug.log (anyErrorToString err) ( model, Cmd.none )
+
+        AddedCall httpResult ->
+            case httpResult of
+                Ok result ->
+                    ( { model
+                        | calls = model.calls ++ [ result.dbCall ]
+
+                        -- , subTasks = model.subTasks ++ [ result.subTasks ]
+                        , preSaveSubTasks = []
+                        , inputWho = ""
+                        , inputComments = ""
+                        , formVisible = False
+                        , loading = False
+                      }
+                    , Cmd.none
+                    )
 
                 -- TODO : Handle errors in UI
                 Err err ->
@@ -345,7 +384,7 @@ view model =
     let
         overlayFormIfVisible =
             if model.formVisible == True then
-                viewFullScreenOverlay model
+                viewFullScreenFormOverlay model
 
             else
                 noAttr
@@ -421,8 +460,8 @@ viewSearchbar text =
         }
 
 
-viewFullScreenOverlay : FormStuff r -> Ui.Attribute Msg
-viewFullScreenOverlay model =
+viewFullSreenOverlay : List (Ui.Element Msg) -> Ui.Attribute Msg
+viewFullSreenOverlay stuffInside =
     Ui.inFront
         (Ui.el
             [ Background.color <| Ui.rgba 0.2 0.2 0.2 0.8
@@ -442,9 +481,14 @@ viewFullScreenOverlay model =
                 , Ui.paddingEach { left = 32, right = 32, top = 48, bottom = 56 }
                 , Border.rounded 16
                 ]
-                (viewForm model)
+                stuffInside
             )
         )
+
+
+viewFullScreenFormOverlay : FormStuff r -> Ui.Attribute Msg
+viewFullScreenFormOverlay model =
+    viewFullSreenOverlay (viewForm model)
 
 
 viewForm : FormStuff r -> List (Ui.Element Msg)
@@ -783,6 +827,39 @@ smoothTransition =
 -- HTTP
 
 
+addCall : String -> Call -> List SubTask -> Cmd Msg
+addCall backendUrl call subTasks =
+    Http.request
+        { method = "PUT"
+        , headers = []
+        , url = backendUrl ++ "/calls/add"
+        , body = Http.jsonBody (addCallEncoder call subTasks)
+        , expect = Http.expectJson AddedCall addedCallDecoder
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+addCallEncoder : Call -> List SubTask -> Json.Encode.Value
+addCallEncoder call subTasks =
+    Json.Encode.object
+        [ ( "call"
+          , Json.Encode.object
+                [ ( "who", Json.Encode.string call.who )
+                , ( "comments", Json.Encode.string call.comments )
+                , ( "when", Json.Encode.int (Time.posixToMillis call.when) )
+
+                -- , ( "subtasks", Json.Encode.list subTasks )
+                ]
+          )
+        ]
+
+
+addedCallDecoder : Json.Decode.Decoder { dbCall : Call }
+addedCallDecoder =
+    Json.Decode.map (\call -> { dbCall = call }) (Json.Decode.field "dbCall" callDecoder)
+
+
 getCallsAndSubTasks : String -> Cmd Msg
 getCallsAndSubTasks backendUrl =
     Http.get { url = backendUrl ++ "/calls", expect = Http.expectJson GotCallsAndSubTasks callsAndSubTasksDecoder }
@@ -790,24 +867,26 @@ getCallsAndSubTasks backendUrl =
 
 callsAndSubTasksDecoder : Json.Decode.Decoder { calls : List Call, subTasks : List SubTask }
 callsAndSubTasksDecoder =
-    -- How to combine these?? They are two separate Lists in model ..
     Json.Decode.map2 (\calls subTasks -> { calls = calls, subTasks = subTasks }) callsDecoder subTasksDecoder
+
+
+callDecoder : Json.Decode.Decoder Call
+callDecoder =
+    (Json.Decode.map4 Call
+        (Json.Decode.field "id" Json.Decode.int
+            |> Json.Decode.andThen (\i -> Json.Decode.succeed (FromBackend i))
+        )
+        (Json.Decode.field "who" Json.Decode.string)
+        (Json.Decode.field "comments" Json.Decode.string)
+        (Json.Decode.field "createdAt" Json.Decode.Extra.datetime)
+     -- How to split this into archived calls???
+    )
 
 
 callsDecoder : Json.Decode.Decoder (List Call)
 callsDecoder =
     Json.Decode.field "calls"
-        (Json.Decode.list
-            (Json.Decode.map4 Call
-                (Json.Decode.field "id" Json.Decode.int
-                    |> Json.Decode.andThen (\i -> Json.Decode.succeed (FromBackend i))
-                )
-                (Json.Decode.field "who" Json.Decode.string)
-                (Json.Decode.field "comments" Json.Decode.string)
-                (Json.Decode.field "createdAt" Json.Decode.Extra.datetime)
-             -- How to split this into archived calls???
-            )
-        )
+        (Json.Decode.list callDecoder)
 
 
 subTasksDecoder : Json.Decode.Decoder (List SubTask)

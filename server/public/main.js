@@ -11676,23 +11676,23 @@ var $elm_community$json_extra$Json$Decode$Extra$datetime = A2(
 	},
 	$elm$json$Json$Decode$string);
 var $elm$json$Json$Decode$map4 = _Json_map4;
+var $author$project$Main$callDecoder = A5(
+	$elm$json$Json$Decode$map4,
+	$author$project$Main$Call,
+	A2(
+		$elm$json$Json$Decode$andThen,
+		function (i) {
+			return $elm$json$Json$Decode$succeed(
+				$author$project$Main$FromBackend(i));
+		},
+		A2($elm$json$Json$Decode$field, 'id', $elm$json$Json$Decode$int)),
+	A2($elm$json$Json$Decode$field, 'who', $elm$json$Json$Decode$string),
+	A2($elm$json$Json$Decode$field, 'comments', $elm$json$Json$Decode$string),
+	A2($elm$json$Json$Decode$field, 'createdAt', $elm_community$json_extra$Json$Decode$Extra$datetime));
 var $author$project$Main$callsDecoder = A2(
 	$elm$json$Json$Decode$field,
 	'calls',
-	$elm$json$Json$Decode$list(
-		A5(
-			$elm$json$Json$Decode$map4,
-			$author$project$Main$Call,
-			A2(
-				$elm$json$Json$Decode$andThen,
-				function (i) {
-					return $elm$json$Json$Decode$succeed(
-						$author$project$Main$FromBackend(i));
-				},
-				A2($elm$json$Json$Decode$field, 'id', $elm$json$Json$Decode$int)),
-			A2($elm$json$Json$Decode$field, 'who', $elm$json$Json$Decode$string),
-			A2($elm$json$Json$Decode$field, 'comments', $elm$json$Json$Decode$string),
-			A2($elm$json$Json$Decode$field, 'createdAt', $elm_community$json_extra$Json$Decode$Extra$datetime))));
+	$elm$json$Json$Decode$list($author$project$Main$callDecoder));
 var $author$project$Main$SubTask = F3(
 	function (callId, text, done) {
 		return {callId: callId, done: done, text: text};
@@ -12002,6 +12002,7 @@ var $author$project$Main$init = function (_v0) {
 			inputSearch: '',
 			inputSubTask: '',
 			inputWho: '',
+			loading: true,
 			preSaveSubTasks: _List_Nil,
 			searchResults: _List_Nil,
 			subTasks: _List_Nil,
@@ -12025,6 +12026,63 @@ var $author$project$Main$AddCallWithTime = function (a) {
 	return {$: 'AddCallWithTime', a: a};
 };
 var $author$project$Main$Creating = {$: 'Creating'};
+var $author$project$Main$AddedCall = function (a) {
+	return {$: 'AddedCall', a: a};
+};
+var $elm$json$Json$Encode$int = _Json_wrap;
+var $elm$time$Time$posixToMillis = function (_v0) {
+	var millis = _v0.a;
+	return millis;
+};
+var $author$project$Main$addCallEncoder = F2(
+	function (call, subTasks) {
+		return $elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'call',
+					$elm$json$Json$Encode$object(
+						_List_fromArray(
+							[
+								_Utils_Tuple2(
+								'who',
+								$elm$json$Json$Encode$string(call.who)),
+								_Utils_Tuple2(
+								'comments',
+								$elm$json$Json$Encode$string(call.comments)),
+								_Utils_Tuple2(
+								'when',
+								$elm$json$Json$Encode$int(
+									$elm$time$Time$posixToMillis(call.when)))
+							])))
+				]));
+	});
+var $author$project$Main$addedCallDecoder = A2(
+	$elm$json$Json$Decode$map,
+	function (call) {
+		return {dbCall: call};
+	},
+	A2($elm$json$Json$Decode$field, 'dbCall', $author$project$Main$callDecoder));
+var $elm$http$Http$jsonBody = function (value) {
+	return A2(
+		_Http_pair,
+		'application/json',
+		A2($elm$json$Json$Encode$encode, 0, value));
+};
+var $author$project$Main$addCall = F3(
+	function (backendUrl, call, subTasks) {
+		return $elm$http$Http$request(
+			{
+				body: $elm$http$Http$jsonBody(
+					A2($author$project$Main$addCallEncoder, call, subTasks)),
+				expect: A2($elm$http$Http$expectJson, $author$project$Main$AddedCall, $author$project$Main$addedCallDecoder),
+				headers: _List_Nil,
+				method: 'PUT',
+				timeout: $elm$core$Maybe$Nothing,
+				tracker: $elm$core$Maybe$Nothing,
+				url: backendUrl + '/calls/add'
+			});
+	});
 var $author$project$Main$anyErrorToString = function (err) {
 	switch (err.$) {
 		case 'BadUrl':
@@ -12040,37 +12098,6 @@ var $author$project$Main$anyErrorToString = function (err) {
 		default:
 			var str = err.a;
 			return 'Bad body: ' + str;
-	}
-};
-var $elm$core$List$maximum = function (list) {
-	if (list.b) {
-		var x = list.a;
-		var xs = list.b;
-		return $elm$core$Maybe$Just(
-			A3($elm$core$List$foldl, $elm$core$Basics$max, x, xs));
-	} else {
-		return $elm$core$Maybe$Nothing;
-	}
-};
-var $author$project$Main$createNewCallId = function (model) {
-	var max = $elm$core$List$maximum(
-		A2(
-			$elm$core$List$map,
-			function (call) {
-				var _v1 = call.id;
-				if (_v1.$ === 'Creating') {
-					return -1;
-				} else {
-					var callid = _v1.a;
-					return callid;
-				}
-			},
-			model.calls));
-	if (max.$ === 'Nothing') {
-		return $author$project$Main$Creating;
-	} else {
-		var x = max.a;
-		return $author$project$Main$FromBackend(x + 1);
 	}
 };
 var $elm$core$List$filter = F2(
@@ -12172,33 +12199,15 @@ var $author$project$Main$update = F2(
 					A2($elm$core$Task$perform, $author$project$Main$AddCallWithTime, $elm$time$Time$now));
 			case 'AddCallWithTime':
 				var time = msg.a;
-				var newCallId = $author$project$Main$createNewCallId(model);
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{
-							calls: _Utils_ap(
-								model.calls,
-								_List_fromArray(
-									[
-										{comments: model.inputComments, id: newCallId, when: time, who: model.inputWho}
-									])),
-							formVisible: false,
-							inputComments: '',
-							inputWho: '',
-							preSaveSubTasks: _List_Nil,
-							subTasks: _Utils_ap(
-								model.subTasks,
-								A2(
-									$elm$core$List$map,
-									function (subTask) {
-										return _Utils_update(
-											subTask,
-											{callId: newCallId});
-									},
-									model.preSaveSubTasks))
-						}),
-					$elm$core$Platform$Cmd$none);
+						{loading: true}),
+					A3(
+						$author$project$Main$addCall,
+						model.backendUrl,
+						{comments: model.inputComments, id: $author$project$Main$Creating, when: time, who: model.inputWho},
+						_List_Nil));
 			case 'DeletePreSaveSubTask':
 				var subtask = msg.a;
 				return _Utils_Tuple2(
@@ -12273,6 +12282,22 @@ var $author$project$Main$update = F2(
 						model,
 						{formVisible: false}),
 					$elm$core$Platform$Cmd$none);
+			case 'GotCallsAndSubTasks':
+				var httpResult = msg.a;
+				if (httpResult.$ === 'Ok') {
+					var result = httpResult.a;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{calls: result.calls, loading: false, subTasks: result.subTasks}),
+						$elm$core$Platform$Cmd$none);
+				} else {
+					var err = httpResult.a;
+					return A2(
+						$elm$core$Debug$log,
+						$author$project$Main$anyErrorToString(err),
+						_Utils_Tuple2(model, $elm$core$Platform$Cmd$none));
+				}
 			default:
 				var httpResult = msg.a;
 				if (httpResult.$ === 'Ok') {
@@ -12280,7 +12305,17 @@ var $author$project$Main$update = F2(
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
-							{calls: result.calls, subTasks: result.subTasks}),
+							{
+								calls: _Utils_ap(
+									model.calls,
+									_List_fromArray(
+										[result.dbCall])),
+								formVisible: false,
+								inputComments: '',
+								inputWho: '',
+								loading: false,
+								preSaveSubTasks: _List_Nil
+							}),
 						$elm$core$Platform$Cmd$none);
 				} else {
 					var err = httpResult.a;
@@ -15575,6 +15610,16 @@ var $mdgriffith$elm_ui$Internal$Model$adjust = F3(
 	function (size, height, vertical) {
 		return {height: height / size, size: size, vertical: vertical};
 	});
+var $elm$core$List$maximum = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return $elm$core$Maybe$Just(
+			A3($elm$core$List$foldl, $elm$core$Basics$max, x, xs));
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
 var $elm$core$List$minimum = function (list) {
 	if (list.b) {
 		var x = list.a;
@@ -18741,10 +18786,6 @@ var $mdgriffith$elm_ui$Element$paragraph = F2(
 						attrs))),
 			$mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
 	});
-var $elm$time$Time$posixToMillis = function (_v0) {
-	var millis = _v0.a;
-	return millis;
-};
 var $mdgriffith$elm_ui$Internal$Model$Px = function (a) {
 	return {$: 'Px', a: a};
 };
@@ -19208,29 +19249,9 @@ var $author$project$Main$viewArchivedCalls = function (model) {
 		model.subTasks,
 		{archived: true, timeZone: model.timeZone, today: model.today}) : $mdgriffith$elm_ui$Element$none;
 };
-var $author$project$Main$CloseForm = {$: 'CloseForm'};
-var $mdgriffith$elm_ui$Internal$Model$Behind = {$: 'Behind'};
-var $mdgriffith$elm_ui$Element$createNearby = F2(
-	function (loc, element) {
-		if (element.$ === 'Empty') {
-			return $mdgriffith$elm_ui$Internal$Model$NoAttribute;
-		} else {
-			return A2($mdgriffith$elm_ui$Internal$Model$Nearby, loc, element);
-		}
-	});
-var $mdgriffith$elm_ui$Element$behindContent = function (element) {
-	return A2($mdgriffith$elm_ui$Element$createNearby, $mdgriffith$elm_ui$Internal$Model$Behind, element);
-};
-var $mdgriffith$elm_ui$Element$Font$center = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$fontAlignment, $mdgriffith$elm_ui$Internal$Style$classes.textCenter);
-var $mdgriffith$elm_ui$Internal$Model$CenterY = {$: 'CenterY'};
-var $mdgriffith$elm_ui$Element$centerY = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$CenterY);
-var $mdgriffith$elm_ui$Internal$Model$InFront = {$: 'InFront'};
-var $mdgriffith$elm_ui$Element$inFront = function (element) {
-	return A2($mdgriffith$elm_ui$Element$createNearby, $mdgriffith$elm_ui$Internal$Model$InFront, element);
-};
-var $mdgriffith$elm_ui$Element$rgba = $mdgriffith$elm_ui$Internal$Model$Rgba;
 var $author$project$Main$AddCall = {$: 'AddCall'};
 var $author$project$Main$AddPreSaveSubTask = {$: 'AddPreSaveSubTask'};
+var $author$project$Main$CloseForm = {$: 'CloseForm'};
 var $author$project$Main$InputCommentsChanged = function (a) {
 	return {$: 'InputCommentsChanged', a: a};
 };
@@ -19369,6 +19390,18 @@ var $mdgriffith$elm_ui$Element$Input$autofill = A2(
 	$elm$core$Basics$composeL,
 	$mdgriffith$elm_ui$Internal$Model$Attr,
 	$elm$html$Html$Attributes$attribute('autocomplete'));
+var $mdgriffith$elm_ui$Internal$Model$Behind = {$: 'Behind'};
+var $mdgriffith$elm_ui$Element$createNearby = F2(
+	function (loc, element) {
+		if (element.$ === 'Empty') {
+			return $mdgriffith$elm_ui$Internal$Model$NoAttribute;
+		} else {
+			return A2($mdgriffith$elm_ui$Internal$Model$Nearby, loc, element);
+		}
+	});
+var $mdgriffith$elm_ui$Element$behindContent = function (element) {
+	return A2($mdgriffith$elm_ui$Element$createNearby, $mdgriffith$elm_ui$Internal$Model$Behind, element);
+};
 var $mdgriffith$elm_ui$Internal$Model$MoveY = function (a) {
 	return {$: 'MoveY', a: a};
 };
@@ -19452,6 +19485,10 @@ var $mdgriffith$elm_ui$Element$Input$hiddenLabelAttribute = function (label) {
 	} else {
 		return $mdgriffith$elm_ui$Internal$Model$NoAttribute;
 	}
+};
+var $mdgriffith$elm_ui$Internal$Model$InFront = {$: 'InFront'};
+var $mdgriffith$elm_ui$Element$inFront = function (element) {
+	return A2($mdgriffith$elm_ui$Element$createNearby, $mdgriffith$elm_ui$Internal$Model$InFront, element);
 };
 var $mdgriffith$elm_ui$Element$Input$isConstrained = function (len) {
 	isConstrained:
@@ -19785,6 +19822,7 @@ var $mdgriffith$elm_ui$Element$alpha = function (o) {
 			transparency));
 };
 var $mdgriffith$elm_ui$Element$Input$charcoal = A3($mdgriffith$elm_ui$Element$rgb, 136 / 255, 138 / 255, 133 / 255);
+var $mdgriffith$elm_ui$Element$rgba = $mdgriffith$elm_ui$Internal$Model$Rgba;
 var $mdgriffith$elm_ui$Element$Input$renderPlaceholder = F3(
 	function (_v0, forPlaceholder, on) {
 		var placeholderAttrs = _v0.a;
@@ -20284,7 +20322,10 @@ var $author$project$Main$viewForm = function (model) {
 			A2($author$project$Main$button, 'Gesprek opslaan', $author$project$Main$AddCall)
 		]);
 };
-var $author$project$Main$viewFullScreenOverlay = function (model) {
+var $mdgriffith$elm_ui$Element$Font$center = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$fontAlignment, $mdgriffith$elm_ui$Internal$Style$classes.textCenter);
+var $mdgriffith$elm_ui$Internal$Model$CenterY = {$: 'CenterY'};
+var $mdgriffith$elm_ui$Element$centerY = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$CenterY);
+var $author$project$Main$viewFullSreenOverlay = function (stuffInside) {
 	return $mdgriffith$elm_ui$Element$inFront(
 		A2(
 			$mdgriffith$elm_ui$Element$el,
@@ -20320,7 +20361,11 @@ var $author$project$Main$viewFullScreenOverlay = function (model) {
 						{bottom: 56, left: 32, right: 32, top: 48}),
 						$mdgriffith$elm_ui$Element$Border$rounded(16)
 					]),
-				$author$project$Main$viewForm(model))));
+				stuffInside)));
+};
+var $author$project$Main$viewFullScreenFormOverlay = function (model) {
+	return $author$project$Main$viewFullSreenOverlay(
+		$author$project$Main$viewForm(model));
 };
 var $author$project$Main$viewSearchCalls = function (model) {
 	var search = $elm$core$String$toLower(model.inputSearch);
@@ -20586,7 +20631,7 @@ var $author$project$Main$viewUnarchivedCalls = function (model) {
 			])) : $mdgriffith$elm_ui$Element$none;
 };
 var $author$project$Main$view = function (model) {
-	var overlayFormIfVisible = model.formVisible ? $author$project$Main$viewFullScreenOverlay(model) : $author$project$Main$noAttr;
+	var overlayFormIfVisible = model.formVisible ? $author$project$Main$viewFullScreenFormOverlay(model) : $author$project$Main$noAttr;
 	return A3(
 		$mdgriffith$elm_ui$Element$layoutWith,
 		{
@@ -20681,4 +20726,4 @@ var $author$project$Main$viewDocument = function (model) {
 var $author$project$Main$main = $elm$browser$Browser$document(
 	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$viewDocument});
 _Platform_export({'Main':{'init':$author$project$Main$main(
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.Call":{"args":[],"type":"{ id : Main.CallId, who : String.String, comments : String.String, when : Time.Posix }"},"Main.SubTask":{"args":[],"type":"{ callId : Main.CallId, text : String.String, done : Basics.Bool }"},"Time.Era":{"args":[],"type":"{ start : Basics.Int, offset : Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"InputWhoChanged":["String.String"],"InputCommentsChanged":["String.String"],"InputSubTaskChanged":["String.String"],"InputSearchChanged":["String.String"],"AddPreSaveSubTask":[],"AddCall":[],"AddCallWithTime":["Time.Posix"],"DeletePreSaveSubTask":["Main.SubTask"],"ToggleSubTask":["Main.SubTask"],"ArchiveCall":["Main.Call"],"OpenForm":[],"CloseForm":[],"GetTimeZone":["Time.Zone"],"SetToday":["Time.Posix"],"GotCallsAndSubTasks":["Result.Result Http.Error { calls : List.List Main.Call, subTasks : List.List Main.SubTask }"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Main.CallId":{"args":[],"tags":{"Creating":[],"FromBackend":["Basics.Int"]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"List.List":{"args":["a"],"tags":{}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Time.Zone":{"args":[],"tags":{"Zone":["Basics.Int","List.List Time.Era"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}}}}})}});}(this));
+	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.Call":{"args":[],"type":"{ id : Main.CallId, who : String.String, comments : String.String, when : Time.Posix }"},"Main.SubTask":{"args":[],"type":"{ callId : Main.CallId, text : String.String, done : Basics.Bool }"},"Time.Era":{"args":[],"type":"{ start : Basics.Int, offset : Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"InputWhoChanged":["String.String"],"InputCommentsChanged":["String.String"],"InputSubTaskChanged":["String.String"],"InputSearchChanged":["String.String"],"AddPreSaveSubTask":[],"AddCall":[],"AddCallWithTime":["Time.Posix"],"DeletePreSaveSubTask":["Main.SubTask"],"ToggleSubTask":["Main.SubTask"],"ArchiveCall":["Main.Call"],"OpenForm":[],"CloseForm":[],"GetTimeZone":["Time.Zone"],"SetToday":["Time.Posix"],"GotCallsAndSubTasks":["Result.Result Http.Error { calls : List.List Main.Call, subTasks : List.List Main.SubTask }"],"AddedCall":["Result.Result Http.Error { dbCall : Main.Call }"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Main.CallId":{"args":[],"tags":{"Creating":[],"FromBackend":["Basics.Int"]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"List.List":{"args":["a"],"tags":{}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Time.Zone":{"args":[],"tags":{"Zone":["Basics.Int","List.List Time.Era"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}}}}})}});}(this));
