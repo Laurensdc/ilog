@@ -18,6 +18,7 @@ app.get('/test', (req, res) => {
 app.use('/', express.static('public'));
 
 app.use('/calls', require('./routes/calls'));
+app.use('/subtasks', require('./routes/subtasks'));
 
 app.listen(PORT, () => {
   console.log(`⚡️[server]: Server is running at https://localhost:${PORT}`);

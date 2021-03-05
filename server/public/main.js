@@ -10896,14 +10896,15 @@ var $author$project$Main$SetToday = function (a) {
 var $author$project$Main$GotCallsAndSubTasks = function (a) {
 	return {$: 'GotCallsAndSubTasks', a: a};
 };
-var $author$project$Main$Call = F4(
-	function (id, who, comments, when) {
-		return {comments: comments, id: id, when: when, who: who};
+var $author$project$Main$Call = F5(
+	function (id, who, comments, when, isArchived) {
+		return {comments: comments, id: id, isArchived: isArchived, when: when, who: who};
 	});
 var $author$project$Main$FromBackend = function (a) {
 	return {$: 'FromBackend', a: a};
 };
 var $elm$json$Json$Decode$andThen = _Json_andThen;
+var $elm$json$Json$Decode$bool = _Json_decodeBool;
 var $elm$json$Json$Decode$fail = _Json_fail;
 var $elm$parser$Parser$Advanced$Bad = F2(
 	function (a, b) {
@@ -11675,9 +11676,8 @@ var $elm_community$json_extra$Json$Decode$Extra$datetime = A2(
 		}
 	},
 	$elm$json$Json$Decode$string);
-var $elm$json$Json$Decode$map4 = _Json_map4;
-var $author$project$Main$callDecoder = A5(
-	$elm$json$Json$Decode$map4,
+var $author$project$Main$callDecoder = A6(
+	$elm$json$Json$Decode$map5,
 	$author$project$Main$Call,
 	A2(
 		$elm$json$Json$Decode$andThen,
@@ -11688,19 +11688,27 @@ var $author$project$Main$callDecoder = A5(
 		A2($elm$json$Json$Decode$field, 'id', $elm$json$Json$Decode$int)),
 	A2($elm$json$Json$Decode$field, 'who', $elm$json$Json$Decode$string),
 	A2($elm$json$Json$Decode$field, 'comments', $elm$json$Json$Decode$string),
-	A2($elm$json$Json$Decode$field, 'createdAt', $elm_community$json_extra$Json$Decode$Extra$datetime));
+	A2($elm$json$Json$Decode$field, 'createdAt', $elm_community$json_extra$Json$Decode$Extra$datetime),
+	A2($elm$json$Json$Decode$field, 'isArchived', $elm$json$Json$Decode$bool));
 var $author$project$Main$callsDecoder = A2(
 	$elm$json$Json$Decode$field,
 	'calls',
 	$elm$json$Json$Decode$list($author$project$Main$callDecoder));
-var $author$project$Main$SubTask = F3(
-	function (callId, text, done) {
-		return {callId: callId, done: done, text: text};
+var $author$project$Main$SubTask = F4(
+	function (id, callId, text, done) {
+		return {callId: callId, done: done, id: id, text: text};
 	});
-var $elm$json$Json$Decode$bool = _Json_decodeBool;
-var $author$project$Main$subTaskDecoder = A4(
-	$elm$json$Json$Decode$map3,
+var $elm$json$Json$Decode$map4 = _Json_map4;
+var $author$project$Main$subTaskDecoder = A5(
+	$elm$json$Json$Decode$map4,
 	$author$project$Main$SubTask,
+	A2(
+		$elm$json$Json$Decode$andThen,
+		function (id) {
+			return $elm$json$Json$Decode$succeed(
+				$author$project$Main$FromBackend(id));
+		},
+		A2($elm$json$Json$Decode$field, 'id', $elm$json$Json$Decode$int)),
 	A2(
 		$elm$json$Json$Decode$andThen,
 		function (id) {
@@ -12056,6 +12064,9 @@ var $author$project$Main$addCallEncoder = F2(
 								$elm$json$Json$Encode$int(
 									$elm$time$Time$posixToMillis(call.when))),
 								_Utils_Tuple2(
+								'isArchived',
+								$elm$json$Json$Encode$bool(call.isArchived)),
+								_Utils_Tuple2(
 								'subTasks',
 								A2(
 									$elm$json$Json$Encode$list,
@@ -12120,6 +12131,27 @@ var $author$project$Main$anyErrorToString = function (err) {
 			return 'Bad body: ' + str;
 	}
 };
+var $author$project$Main$ArchivedCall = function (a) {
+	return {$: 'ArchivedCall', a: a};
+};
+var $author$project$Main$archivedCallDecoder = A2($elm$json$Json$Decode$field, 'updatedCall', $author$project$Main$callDecoder);
+var $author$project$Main$archiveCall = F2(
+	function (backendUrl, call) {
+		var id = function () {
+			var _v0 = call.id;
+			if (_v0.$ === 'Creating') {
+				return 0;
+			} else {
+				var i = _v0.a;
+				return i;
+			}
+		}();
+		return $elm$http$Http$get(
+			{
+				expect: A2($elm$http$Http$expectJson, $author$project$Main$ArchivedCall, $author$project$Main$archivedCallDecoder),
+				url: backendUrl + ('/calls/' + ($elm$core$String$fromInt(id) + '/archive'))
+			});
+	});
 var $elm$core$List$filter = F2(
 	function (isGood, list) {
 		return A3(
@@ -12132,42 +12164,28 @@ var $elm$core$List$filter = F2(
 			list);
 	});
 var $elm$core$Debug$log = _Debug_log;
-var $elm$core$List$any = F2(
-	function (isOkay, list) {
-		any:
-		while (true) {
-			if (!list.b) {
-				return false;
-			} else {
-				var x = list.a;
-				var xs = list.b;
-				if (isOkay(x)) {
-					return true;
-				} else {
-					var $temp$isOkay = isOkay,
-						$temp$list = xs;
-					isOkay = $temp$isOkay;
-					list = $temp$list;
-					continue any;
-				}
-			}
-		}
-	});
-var $elm$core$List$member = F2(
-	function (x, xs) {
-		return A2(
-			$elm$core$List$any,
-			function (a) {
-				return _Utils_eq(a, x);
-			},
-			xs);
-	});
 var $author$project$Main$sendMessage = _Platform_outgoingPort('sendMessage', $elm$json$Json$Encode$string);
-var $author$project$Main$toggleSubTask = function (subTask) {
-	return _Utils_update(
-		subTask,
-		{done: !subTask.done});
+var $author$project$Main$ToggledSubTask = function (a) {
+	return {$: 'ToggledSubTask', a: a};
 };
+var $author$project$Main$toggledSubTaskDecoder = A2($elm$json$Json$Decode$field, 'updatedSubTask', $author$project$Main$subTaskDecoder);
+var $author$project$Main$toggleSubTask = F2(
+	function (backendUrl, subTask) {
+		var id = function () {
+			var _v0 = subTask.id;
+			if (_v0.$ === 'Creating') {
+				return 0;
+			} else {
+				var i = _v0.a;
+				return i;
+			}
+		}();
+		return $elm$http$Http$get(
+			{
+				expect: A2($elm$http$Http$expectJson, $author$project$Main$ToggledSubTask, $author$project$Main$toggledSubTaskDecoder),
+				url: backendUrl + ('/subtasks/' + ($elm$core$String$fromInt(id) + '/done'))
+			});
+	});
 var $author$project$Main$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -12209,7 +12227,7 @@ var $author$project$Main$update = F2(
 								model.preSaveSubTasks,
 								_List_fromArray(
 									[
-										{callId: $author$project$Main$Creating, done: false, text: model.inputSubTask}
+										{callId: $author$project$Main$Creating, done: false, id: $author$project$Main$Creating, text: model.inputSubTask}
 									]))
 						}),
 					$elm$core$Platform$Cmd$none);
@@ -12226,7 +12244,7 @@ var $author$project$Main$update = F2(
 					A3(
 						$author$project$Main$addCall,
 						model.backendUrl,
-						{comments: model.inputComments, id: $author$project$Main$Creating, when: time, who: model.inputWho},
+						{comments: model.inputComments, id: $author$project$Main$Creating, isArchived: false, when: time, who: model.inputWho},
 						A2(
 							$elm$core$List$map,
 							function (subTask) {
@@ -12263,40 +12281,6 @@ var $author$project$Main$update = F2(
 						model,
 						{today: time}),
 					$elm$core$Platform$Cmd$none);
-			case 'ToggleSubTask':
-				var subTask = msg.a;
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							subTasks: A2(
-								$elm$core$List$map,
-								function (sub) {
-									return _Utils_eq(sub, subTask) ? $author$project$Main$toggleSubTask(sub) : sub;
-								},
-								model.subTasks)
-						}),
-					$elm$core$Platform$Cmd$none);
-			case 'ArchiveCall':
-				var call = msg.a;
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							archivedCalls: A2($elm$core$List$member, call, model.archivedCalls) ? A2(
-								$elm$core$List$filter,
-								function (fCall) {
-									return !_Utils_eq(fCall, call);
-								},
-								model.archivedCalls) : A2($elm$core$List$cons, call, model.archivedCalls),
-							calls: A2($elm$core$List$member, call, model.calls) ? A2(
-								$elm$core$List$filter,
-								function (fCall) {
-									return !_Utils_eq(fCall, call);
-								},
-								model.calls) : A2($elm$core$List$cons, call, model.calls)
-						}),
-					$elm$core$Platform$Cmd$none);
 			case 'OpenForm':
 				return _Utils_Tuple2(
 					_Utils_update(
@@ -12316,7 +12300,22 @@ var $author$project$Main$update = F2(
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
-							{calls: result.calls, loading: false, subTasks: result.subTasks}),
+							{
+								archivedCalls: A2(
+									$elm$core$List$filter,
+									function (c) {
+										return c.isArchived;
+									},
+									result.calls),
+								calls: A2(
+									$elm$core$List$filter,
+									function (c) {
+										return !c.isArchived;
+									},
+									result.calls),
+								loading: false,
+								subTasks: result.subTasks
+							}),
 						$elm$core$Platform$Cmd$none);
 				} else {
 					var err = httpResult.a;
@@ -12329,7 +12328,7 @@ var $author$project$Main$update = F2(
 								{loading: false}),
 							$elm$core$Platform$Cmd$none));
 				}
-			default:
+			case 'AddedCall':
 				var httpResult = msg.a;
 				if (httpResult.$ === 'Ok') {
 					var result = httpResult.a;
@@ -12348,6 +12347,81 @@ var $author$project$Main$update = F2(
 								preSaveSubTasks: _List_Nil,
 								subTasks: _Utils_ap(model.subTasks, result.subTasks)
 							}),
+						$elm$core$Platform$Cmd$none);
+				} else {
+					var err = httpResult.a;
+					return A2(
+						$elm$core$Debug$log,
+						$author$project$Main$anyErrorToString(err),
+						_Utils_Tuple2(
+							_Utils_update(
+								model,
+								{loading: false}),
+							$elm$core$Platform$Cmd$none));
+				}
+			case 'ToggleSubTask':
+				var subTask = msg.a;
+				return _Utils_Tuple2(
+					model,
+					A2($author$project$Main$toggleSubTask, model.backendUrl, subTask));
+			case 'ToggledSubTask':
+				var httpResult = msg.a;
+				if (httpResult.$ === 'Ok') {
+					var subTask = httpResult.a;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								subTasks: A2(
+									$elm$core$List$map,
+									function (st) {
+										return _Utils_eq(st.id, subTask.id) ? subTask : st;
+									},
+									model.subTasks)
+							}),
+						$elm$core$Platform$Cmd$none);
+				} else {
+					var err = httpResult.a;
+					return A2(
+						$elm$core$Debug$log,
+						$author$project$Main$anyErrorToString(err),
+						_Utils_Tuple2(
+							_Utils_update(
+								model,
+								{loading: false}),
+							$elm$core$Platform$Cmd$none));
+				}
+			case 'ArchiveCall':
+				var call = msg.a;
+				return _Utils_Tuple2(
+					model,
+					A2($author$project$Main$archiveCall, model.backendUrl, call));
+			default:
+				var httpResult = msg.a;
+				if (httpResult.$ === 'Ok') {
+					var call = httpResult.a;
+					var updatedCalls = call.isArchived ? A2(
+						$elm$core$List$filter,
+						function (c) {
+							return !_Utils_eq(c.id, call.id);
+						},
+						model.calls) : _Utils_ap(
+						model.calls,
+						_List_fromArray(
+							[call]));
+					var updatedArchivedCalls = call.isArchived ? _Utils_ap(
+						model.archivedCalls,
+						_List_fromArray(
+							[call])) : A2(
+						$elm$core$List$filter,
+						function (c) {
+							return !_Utils_eq(c.id, call.id);
+						},
+						model.archivedCalls);
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{archivedCalls: updatedArchivedCalls, calls: updatedCalls}),
 						$elm$core$Platform$Cmd$none);
 				} else {
 					var err = httpResult.a;
@@ -14915,6 +14989,27 @@ var $mdgriffith$elm_ui$Internal$Model$staticRoot = function (opts) {
 				_List_Nil);
 	}
 };
+var $elm$core$List$any = F2(
+	function (isOkay, list) {
+		any:
+		while (true) {
+			if (!list.b) {
+				return false;
+			} else {
+				var x = list.a;
+				var xs = list.b;
+				if (isOkay(x)) {
+					return true;
+				} else {
+					var $temp$isOkay = isOkay,
+						$temp$list = xs;
+					isOkay = $temp$isOkay;
+					list = $temp$list;
+					continue any;
+				}
+			}
+		}
+	});
 var $mdgriffith$elm_ui$Internal$Model$fontName = function (font) {
 	switch (font.$) {
 		case 'Serif':
@@ -20627,8 +20722,6 @@ var $author$project$Main$filterCallsFromThisWeekButNotToday = F3(
 			calls);
 	});
 var $author$project$Main$viewUnarchivedCalls = function (model) {
-	var topPadding = $mdgriffith$elm_ui$Element$paddingEach(
-		{bottom: 0, left: 0, right: 0, top: 32});
 	var callsToday = A3($author$project$Main$filterCallsFromDay, model.calls, model.timeZone, model.today);
 	var viewCallsToday = A3(
 		$author$project$Main$viewCalls,
@@ -20770,4 +20863,4 @@ var $author$project$Main$viewDocument = function (model) {
 var $author$project$Main$main = $elm$browser$Browser$document(
 	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$viewDocument});
 _Platform_export({'Main':{'init':$author$project$Main$main(
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.Call":{"args":[],"type":"{ id : Main.CallId, who : String.String, comments : String.String, when : Time.Posix }"},"Main.SubTask":{"args":[],"type":"{ callId : Main.CallId, text : String.String, done : Basics.Bool }"},"Time.Era":{"args":[],"type":"{ start : Basics.Int, offset : Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"InputWhoChanged":["String.String"],"InputCommentsChanged":["String.String"],"InputSubTaskChanged":["String.String"],"InputSearchChanged":["String.String"],"AddPreSaveSubTask":[],"AddCall":[],"AddCallWithTime":["Time.Posix"],"DeletePreSaveSubTask":["Main.SubTask"],"ToggleSubTask":["Main.SubTask"],"ArchiveCall":["Main.Call"],"OpenForm":[],"CloseForm":[],"GetTimeZone":["Time.Zone"],"SetToday":["Time.Posix"],"GotCallsAndSubTasks":["Result.Result Http.Error { calls : List.List Main.Call, subTasks : List.List Main.SubTask }"],"AddedCall":["Result.Result Http.Error { call : Main.Call, subTasks : List.List Main.SubTask }"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Main.CallId":{"args":[],"tags":{"Creating":[],"FromBackend":["Basics.Int"]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"List.List":{"args":["a"],"tags":{}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Time.Zone":{"args":[],"tags":{"Zone":["Basics.Int","List.List Time.Era"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}}}}})}});}(this));
+	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.Call":{"args":[],"type":"{ id : Main.AppId, who : String.String, comments : String.String, when : Time.Posix, isArchived : Basics.Bool }"},"Main.SubTask":{"args":[],"type":"{ id : Main.AppId, callId : Main.AppId, text : String.String, done : Basics.Bool }"},"Time.Era":{"args":[],"type":"{ start : Basics.Int, offset : Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"InputWhoChanged":["String.String"],"InputCommentsChanged":["String.String"],"InputSubTaskChanged":["String.String"],"InputSearchChanged":["String.String"],"AddPreSaveSubTask":[],"AddCall":[],"AddCallWithTime":["Time.Posix"],"DeletePreSaveSubTask":["Main.SubTask"],"ToggleSubTask":["Main.SubTask"],"ArchiveCall":["Main.Call"],"OpenForm":[],"CloseForm":[],"GetTimeZone":["Time.Zone"],"SetToday":["Time.Posix"],"GotCallsAndSubTasks":["Result.Result Http.Error { calls : List.List Main.Call, subTasks : List.List Main.SubTask }"],"AddedCall":["Result.Result Http.Error { call : Main.Call, subTasks : List.List Main.SubTask }"],"ToggledSubTask":["Result.Result Http.Error Main.SubTask"],"ArchivedCall":["Result.Result Http.Error Main.Call"]}},"Main.AppId":{"args":[],"tags":{"Creating":[],"FromBackend":["Basics.Int"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"List.List":{"args":["a"],"tags":{}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Time.Zone":{"args":[],"tags":{"Zone":["Basics.Int","List.List Time.Era"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}}}}})}});}(this));

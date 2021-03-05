@@ -107,21 +107,23 @@ type alias FormStuff r =
 
 
 type alias Call =
-    { id : CallId
+    { id : AppId
     , who : String
     , comments : String
     , when : Time.Posix
+    , isArchived : Bool
     }
 
 
 type alias SubTask =
-    { callId : CallId
+    { id : AppId
+    , callId : AppId
     , text : String
     , done : Bool
     }
 
 
-type CallId
+type AppId
     = Creating
     | FromBackend Int
 
@@ -162,6 +164,8 @@ type Msg
       -- API stuff
     | GotCallsAndSubTasks (Result Http.Error { calls : List Call, subTasks : List SubTask })
     | AddedCall (Result Http.Error { call : Call, subTasks : List SubTask })
+    | ToggledSubTask (Result Http.Error SubTask)
+    | ArchivedCall (Result Http.Error Call)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -185,7 +189,7 @@ update msg model =
 
             else
                 ( { model
-                    | preSaveSubTasks = model.preSaveSubTasks ++ [ { callId = Creating, text = model.inputSubTask, done = False } ]
+                    | preSaveSubTasks = model.preSaveSubTasks ++ [ { id = Creating, callId = Creating, text = model.inputSubTask, done = False } ]
                     , inputSubTask = ""
                   }
                 , Cmd.none
@@ -201,6 +205,7 @@ update msg model =
                 , who = model.inputWho
                 , comments = model.inputComments
                 , when = time
+                , isArchived = False
                 }
                 (List.map (\subTask -> { subTask | callId = Creating }) model.preSaveSubTasks)
             )
@@ -218,40 +223,6 @@ update msg model =
         SetToday time ->
             ( { model | today = time }, Cmd.none )
 
-        ToggleSubTask subTask ->
-            ( { model
-                | subTasks =
-                    List.map
-                        (\sub ->
-                            if sub == subTask then
-                                toggleSubTask sub
-
-                            else
-                                sub
-                        )
-                        model.subTasks
-              }
-            , Cmd.none
-            )
-
-        ArchiveCall call ->
-            ( { model
-                | calls =
-                    if List.member call model.calls then
-                        List.filter (\fCall -> fCall /= call) model.calls
-
-                    else
-                        call :: model.calls
-                , archivedCalls =
-                    if List.member call model.archivedCalls then
-                        List.filter (\fCall -> fCall /= call) model.archivedCalls
-
-                    else
-                        call :: model.archivedCalls
-              }
-            , Cmd.none
-            )
-
         OpenForm ->
             ( { model | formVisible = True }, sendMessage "Test" )
 
@@ -263,7 +234,8 @@ update msg model =
             case httpResult of
                 Ok result ->
                     ( { model
-                        | calls = result.calls
+                        | calls = List.filter (\c -> c.isArchived == False) result.calls
+                        , archivedCalls = List.filter (\c -> c.isArchived == True) result.calls
                         , subTasks = result.subTasks
                         , loading = False
                       }
@@ -293,6 +265,67 @@ update msg model =
                 Err err ->
                     Debug.log (anyErrorToString err) ( { model | loading = False }, Cmd.none )
 
+        ToggleSubTask subTask ->
+            ( model
+            , toggleSubTask model.backendUrl subTask
+            )
+
+        ToggledSubTask httpResult ->
+            case httpResult of
+                Ok subTask ->
+                    ( { model
+                        | subTasks =
+                            List.map
+                                (\st ->
+                                    if st.id == subTask.id then
+                                        subTask
+
+                                    else
+                                        st
+                                )
+                                model.subTasks
+                      }
+                    , Cmd.none
+                    )
+
+                -- TODO : Handle errors in UI
+                Err err ->
+                    Debug.log (anyErrorToString err) ( { model | loading = False }, Cmd.none )
+
+        ArchiveCall call ->
+            ( model
+            , archiveCall model.backendUrl call
+            )
+
+        ArchivedCall httpResult ->
+            case httpResult of
+                Ok call ->
+                    let
+                        updatedArchivedCalls =
+                            if call.isArchived then
+                                model.archivedCalls ++ [ call ]
+
+                            else
+                                List.filter (\c -> c.id /= call.id) model.archivedCalls
+
+                        updatedCalls =
+                            if call.isArchived then
+                                List.filter (\c -> c.id /= call.id) model.calls
+
+                            else
+                                model.calls ++ [ call ]
+                    in
+                    ( { model
+                        | calls = updatedCalls
+                        , archivedCalls = updatedArchivedCalls
+                      }
+                    , Cmd.none
+                    )
+
+                -- TODO : Handle errors in UI
+                Err err ->
+                    Debug.log (anyErrorToString err) ( { model | loading = False }, Cmd.none )
+
 
 {-| Checks calls for highest value of id.
 
@@ -300,7 +333,7 @@ Returns a new highest id.
 Should become redundant when using actual API.
 
 -}
-createNewCallId : Model -> CallId
+createNewCallId : Model -> AppId
 createNewCallId model =
     let
         max =
@@ -323,15 +356,6 @@ createNewCallId model =
 
         Just x ->
             FromBackend (x + 1)
-
-
-{-| Todo: Call API
--}
-toggleSubTask : SubTask -> SubTask
-toggleSubTask subTask =
-    { subTask
-        | done = not subTask.done
-    }
 
 
 
@@ -555,6 +579,7 @@ viewSearchCalls model =
                         || String.contains search (TimeStuff.toHumanDate model.timeZone call.when |> String.toLower)
                         || String.contains search (TimeStuff.toHumanTime model.timeZone call.when |> String.toLower)
                         || String.contains search (call.comments |> String.toLower)
+                    -- Todo: Search in calls' subTasks too?
                 then
                     True
 
@@ -583,9 +608,6 @@ viewSearchCalls model =
 viewUnarchivedCalls : Model -> Ui.Element Msg
 viewUnarchivedCalls model =
     let
-        topPadding =
-            Ui.paddingEach { top = 32, left = 0, right = 0, bottom = 0 }
-
         callsToday =
             filterCallsFromDay model.calls model.timeZone model.today
 
@@ -833,6 +855,52 @@ addCall backendUrl call subTasks =
         }
 
 
+toggleSubTask : String -> SubTask -> Cmd Msg
+toggleSubTask backendUrl subTask =
+    let
+        id =
+            case subTask.id of
+                Creating ->
+                    0
+
+                -- Todo: This isn't right
+                FromBackend i ->
+                    i
+    in
+    Http.get
+        { url = backendUrl ++ "/subtasks/" ++ String.fromInt id ++ "/done"
+        , expect = Http.expectJson ToggledSubTask toggledSubTaskDecoder
+        }
+
+
+toggledSubTaskDecoder : Json.Decode.Decoder SubTask
+toggledSubTaskDecoder =
+    Json.Decode.field "updatedSubTask" subTaskDecoder
+
+
+archiveCall : String -> Call -> Cmd Msg
+archiveCall backendUrl call =
+    let
+        id =
+            case call.id of
+                Creating ->
+                    0
+
+                -- Todo: This isn't right
+                FromBackend i ->
+                    i
+    in
+    Http.get
+        { url = backendUrl ++ "/calls/" ++ String.fromInt id ++ "/archive"
+        , expect = Http.expectJson ArchivedCall archivedCallDecoder
+        }
+
+
+archivedCallDecoder : Json.Decode.Decoder Call
+archivedCallDecoder =
+    Json.Decode.field "updatedCall" callDecoder
+
+
 addCallEncoder : Call -> List SubTask -> Json.Encode.Value
 addCallEncoder call subTasks =
     Json.Encode.object
@@ -841,6 +909,7 @@ addCallEncoder call subTasks =
                 [ ( "who", Json.Encode.string call.who )
                 , ( "comments", Json.Encode.string call.comments )
                 , ( "when", Json.Encode.int (Time.posixToMillis call.when) )
+                , ( "isArchived", Json.Encode.bool call.isArchived )
                 , ( "subTasks"
                   , Json.Encode.list
                         (\st ->
@@ -875,7 +944,13 @@ callsAndSubTasksDecoder =
 
 subTaskDecoder : Json.Decode.Decoder SubTask
 subTaskDecoder =
-    Json.Decode.map3 SubTask
+    Json.Decode.map4 SubTask
+        (Json.Decode.field "id" Json.Decode.int
+            |> Json.Decode.andThen
+                (\id ->
+                    Json.Decode.succeed (FromBackend id)
+                )
+        )
         (Json.Decode.field "callId" Json.Decode.int
             |> Json.Decode.andThen
                 (\id ->
@@ -888,13 +963,14 @@ subTaskDecoder =
 
 callDecoder : Json.Decode.Decoder Call
 callDecoder =
-    (Json.Decode.map4 Call
+    (Json.Decode.map5 Call
         (Json.Decode.field "id" Json.Decode.int
             |> Json.Decode.andThen (\i -> Json.Decode.succeed (FromBackend i))
         )
         (Json.Decode.field "who" Json.Decode.string)
         (Json.Decode.field "comments" Json.Decode.string)
         (Json.Decode.field "createdAt" Json.Decode.Extra.datetime)
+        (Json.Decode.field "isArchived" Json.Decode.bool)
      -- How to split this into archived calls???
     )
 
@@ -987,6 +1063,10 @@ subscriptions _ =
     Sub.none
 
 
+
+-- HELPERS
+
+
 onEnter : msg -> Ui.Attribute msg
 onEnter msg =
     Ui.htmlAttribute
@@ -1028,7 +1108,6 @@ type AppColor
 
 color : AppColor -> Ui.Color
 color col =
-    -- #1b1f3a, #a64942, #ff7844
     case col of
         Text ->
             Ui.rgb255 0xFF 0xFF 0xFF

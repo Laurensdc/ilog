@@ -8,8 +8,8 @@ const { Call, SubTask } = require('../models');
  */
 router.get('/', async (req, res) => {
   try {
-    const calls = await Call.findAll();
-    const subTasks = await SubTask.findAll();
+    const calls = await Call.findAll({ order: [['updatedAt', 'DESC']] });
+    const subTasks = await SubTask.findAll({ order: [['updatedAt', 'DESC']] });
 
     return res.status(200).json({
       message: 'Retrieved all calls & subTasks',
@@ -49,16 +49,7 @@ router.put('/add', async (req, res) => {
     });
   }
 
-  if (
-    !(
-      'who' in call &&
-      typeof call.who === 'string' &&
-      'comments' in call &&
-      typeof call.comments === 'string' &&
-      'when' in call &&
-      typeof call.when === 'number'
-    )
-  ) {
+  if (!validateCall(call)) {
     return res.status(400).json({
       message:
         'Incorrectly formed call in body, expecting { who: String, comments: String, when: Number (millisFromPosix) }',
@@ -71,7 +62,7 @@ router.put('/add', async (req, res) => {
     const dbCall = await Call.create({
       who: call.who,
       comments: call.comments,
-      when: new Date(call.when),
+      isArchived: false,
     });
     const callId = dbCall.id;
 
@@ -85,6 +76,87 @@ router.put('/add', async (req, res) => {
       message: 'Added call to DB',
       call: dbCall,
       subTasks: dbSubTasks,
+    });
+  } catch (err) {
+    h.print.err(err);
+    return res.status(400).json({
+      message: 'Something went wrong',
+      error: err,
+    });
+  }
+});
+
+/**
+ * Update call.who && call.comments
+ */
+router.post('/:id/edit', async (req, res) => {
+  const id = req.params.id;
+  const newCall = req.body.call;
+
+  if (!id) {
+    return res.status(400).json({
+      message: 'Please pass a callId',
+    });
+  }
+
+  const call = await Call.findByPk(id);
+  if (!call) {
+    return res.status(400).json({
+      message: `Call with id ${id} not found`,
+    });
+  }
+
+  if (
+    !(
+      'who' in call &&
+      typeof call.who === 'string' &&
+      'comments' in call &&
+      typeof call.comments === 'string'
+    )
+  ) {
+    if (!validateCall(call)) {
+      return res.status(400).json({
+        message: 'Incorrectly formed call in body, expecting { who: String, comments: String }',
+        call: null,
+      });
+    }
+  }
+
+  call.comments = newCall.comments;
+  call.who = newCall.who;
+  await call.save();
+
+  return res.status(200).json({
+    message: 'Call updated',
+    call,
+  });
+});
+
+/**
+ * Toggle "isArchived" for this subTask
+ */
+router.get('/:id/archive', async (req, res) => {
+  try {
+    const id = req.params.id;
+    if (!id) {
+      return res.status(400).json({
+        message: 'Please pass a CallId',
+      });
+    }
+
+    const call = await Call.findByPk(id);
+
+    if (!call) {
+      return res.status(400).json({
+        message: 'Call with id ' + id + ' not found',
+      });
+    }
+    call.isArchived = !call.isArchived;
+    await call.save();
+
+    return res.status(200).json({
+      message: 'Call saved',
+      updatedCall: call,
     });
   } catch (err) {
     h.print.err(err);
@@ -125,6 +197,17 @@ function getParsedSubTasks(callId, subTasks) {
       })
       .filter((st) => st !== null && st !== undefined);
   } else return [];
+}
+
+function validateCall(call) {
+  return (
+    'who' in call &&
+    typeof call.who === 'string' &&
+    'comments' in call &&
+    typeof call.comments === 'string' &&
+    'when' in call &&
+    typeof call.when === 'number'
+  );
 }
 
 module.exports = router;

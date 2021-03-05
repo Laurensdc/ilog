@@ -5,7 +5,7 @@
 `./run`  
 Using the thing.
 
-Builds Elm, serves Node backend and opens browser with Frontend app.
+Builds & minifies Elm , serves Node backend and opens browser with Frontend app.
 
 ---
 
@@ -13,7 +13,7 @@ Builds Elm, serves Node backend and opens browser with Frontend app.
 
 - `./dev`  
   Run & live reload with `elm-live` on `http://localhost:8000`,  
-  Run & live reload backend files on `http://localhost:3000` with `ts-node-dev`.
+  Run & live reload backend files on `http://localhost:3000` with `nodemon`.
 
 ### Elm @Frontend
 
