@@ -1,4 +1,4 @@
-const h = require('../helpers');
+const h = require('../../helpers');
 
 const createCallsTableSQL = `
 CREATE TABLE IF NOT EXISTS calls (
