@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server",
     "prod": "start http://localhost:3000 && node server.js",
-    "resetdb": "node scripts/droptables && node scripts/createtables && node scripts/dummyseeds"
+    "resetdb": "node scripts/resetdb"
   },
   "repository": {
     "type": "git",
@@ -21,7 +21,10 @@
   "homepage": "https://github.com/Laurensdc/ilog#readme",
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "pg": "^8.5.1",
+    "pg-hstore": "^2.3.3",
+    "sequelize": "^6.5.0"
   },
   "devDependencies": {
     "eslint": "^7.20.0",
