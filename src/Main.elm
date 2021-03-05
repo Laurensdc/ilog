@@ -40,45 +40,6 @@ main =
 -- MODEL
 
 
-dummyCalls : List Call
-dummyCalls =
-    [ { id = FromBackend 1
-      , who = "Woe 24/02 19:24"
-      , comments = "TEST bellen naar labo enal, kwenie"
-      , when = Time.millisToPosix 1614191035000
-      }
-    , { id = FromBackend 2
-      , who = "23/02 03:23"
-      , comments = "Wa een tang"
-      , when = Time.millisToPosix 1614093833000
-      }
-    , { id = FromBackend 3
-      , who = "22/02 03:23"
-      , comments = "Wdddd een tang"
-      , when = Time.millisToPosix 1614007433000
-      }
-    , { id = FromBackend 4
-      , who = "21/02"
-      , comments = "Ik ben epic"
-      , when = Time.millisToPosix 1613921033000
-      }
-    , { id = FromBackend 5
-      , who = "Dinsdag 23/02 22:33?"
-      , comments = "Soep"
-      , when = Time.millisToPosix 1614116005166
-      }
-    ]
-
-
-dummySubTasks : List SubTask
-dummySubTasks =
-    [ { callId = FromBackend 1, text = "Bel labo", done = False }
-    , { callId = FromBackend 1, text = "Check die stock", done = False }
-    , { callId = FromBackend 2, text = "Bel Cissy", done = False }
-    , { callId = FromBackend 2, text = "Dingske mailen met vraag", done = False }
-    ]
-
-
 type alias Model =
     FormStuff
         { inputSearch : String
@@ -114,7 +75,7 @@ init _ =
       , inputSearch = ""
 
       -- Calls & subtasks (data)
-      , calls = dummyCalls
+      , calls = []
       , subTasks = []
       , archivedCalls = []
       , searchResults = []
@@ -197,7 +158,7 @@ type Msg
     | GetTimeZone Time.Zone
     | SetToday Time.Posix
       -- API stuff
-    | GotCallsAndSubTasks (Result Http.Error (List SubTask))
+    | GotCallsAndSubTasks (Result Http.Error { calls : List Call, subTasks : List SubTask })
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -309,8 +270,8 @@ update msg model =
 
         GotCallsAndSubTasks httpResult ->
             case httpResult of
-                Ok subTasks ->
-                    ( { model | subTasks = subTasks }, Cmd.none )
+                Ok result ->
+                    ( { model | calls = result.calls, subTasks = result.subTasks }, Cmd.none )
 
                 -- TODO : Handle errors in UI
                 Err err ->
@@ -824,14 +785,13 @@ smoothTransition =
 
 getCallsAndSubTasks : String -> Cmd Msg
 getCallsAndSubTasks backendUrl =
-    Http.get { url = backendUrl ++ "/calls", expect = Http.expectJson GotCallsAndSubTasks subTasksDecoder }
+    Http.get { url = backendUrl ++ "/calls", expect = Http.expectJson GotCallsAndSubTasks callsAndSubTasksDecoder }
 
 
-
--- callsAndSubTasksDecoder : Json.Decode.Decoder ( List Call, List SubTask )
--- callsAndSubTasksDecoder =
---     -- How to combine these?? They are two separate Lists in model ..
---     Json.Decode.map2 () callsDecoder subTasksDecoder
+callsAndSubTasksDecoder : Json.Decode.Decoder { calls : List Call, subTasks : List SubTask }
+callsAndSubTasksDecoder =
+    -- How to combine these?? They are two separate Lists in model ..
+    Json.Decode.map2 (\calls subTasks -> { calls = calls, subTasks = subTasks }) callsDecoder subTasksDecoder
 
 
 callsDecoder : Json.Decode.Decoder (List Call)
