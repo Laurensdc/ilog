@@ -161,7 +161,7 @@ type Msg
     | SetToday Time.Posix
       -- API stuff
     | GotCallsAndSubTasks (Result Http.Error { calls : List Call, subTasks : List SubTask })
-    | AddedCall (Result Http.Error { dbCall : Call }) --, dbSubTasks : List SubTask })
+    | AddedCall (Result Http.Error { call : Call, subTasks : List SubTask })
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -202,31 +202,9 @@ update msg model =
                 , comments = model.inputComments
                 , when = time
                 }
-                []
+                (List.map (\subTask -> { subTask | callId = Creating }) model.preSaveSubTasks)
             )
 
-        -- let
-        --     newCallId =
-        --         createNewCallId model
-        -- in
-        -- ( { model
-        --     | calls =
-        --         model.calls
-        --             ++ [ { -- TODO -> actually from backend
-        --                    id = newCallId
-        --                  , who = model.inputWho
-        --                  , comments = model.inputComments
-        --                  , when = time
-        --                  }
-        --                ]
-        --     , subTasks = model.subTasks ++ List.map (\subTask -> { subTask | callId = newCallId }) model.preSaveSubTasks
-        --     , preSaveSubTasks = []
-        --     , inputWho = ""
-        --     , inputComments = ""
-        --     , formVisible = False
-        --   }
-        -- , Cmd.none
-        -- )
         DeletePreSaveSubTask subtask ->
             ( { model
                 | preSaveSubTasks = List.filter (\s -> s /= subtask) model.preSaveSubTasks
@@ -294,15 +272,14 @@ update msg model =
 
                 -- TODO : Handle errors in UI
                 Err err ->
-                    Debug.log (anyErrorToString err) ( model, Cmd.none )
+                    Debug.log (anyErrorToString err) ( { model | loading = False }, Cmd.none )
 
         AddedCall httpResult ->
             case httpResult of
                 Ok result ->
                     ( { model
-                        | calls = model.calls ++ [ result.dbCall ]
-
-                        -- , subTasks = model.subTasks ++ [ result.subTasks ]
+                        | calls = model.calls ++ [ result.call ]
+                        , subTasks = model.subTasks ++ result.subTasks
                         , preSaveSubTasks = []
                         , inputWho = ""
                         , inputComments = ""
@@ -314,7 +291,7 @@ update msg model =
 
                 -- TODO : Handle errors in UI
                 Err err ->
-                    Debug.log (anyErrorToString err) ( model, Cmd.none )
+                    Debug.log (anyErrorToString err) ( { model | loading = False }, Cmd.none )
 
 
 {-| Checks calls for highest value of id.
@@ -388,6 +365,13 @@ view model =
 
             else
                 noAttr
+
+        spinnerIfVisible =
+            if model.loading == True then
+                viewSpinner
+
+            else
+                noAttr
     in
     Ui.layoutWith
         { options =
@@ -405,6 +389,9 @@ view model =
 
                -- Form
                , overlayFormIfVisible
+
+               -- Loading spinner
+               , spinnerIfVisible
                ]
         )
         (Ui.column
@@ -460,8 +447,8 @@ viewSearchbar text =
         }
 
 
-viewFullSreenOverlay : List (Ui.Element Msg) -> Ui.Attribute Msg
-viewFullSreenOverlay stuffInside =
+viewFullScreenOverlay : List (Ui.Element Msg) -> Ui.Attribute Msg
+viewFullScreenOverlay stuffInside =
     Ui.inFront
         (Ui.el
             [ Background.color <| Ui.rgba 0.2 0.2 0.2 0.8
@@ -486,9 +473,14 @@ viewFullSreenOverlay stuffInside =
         )
 
 
+viewSpinner : Ui.Attribute Msg
+viewSpinner =
+    viewFullScreenOverlay [ Ui.text "Loading..." ]
+
+
 viewFullScreenFormOverlay : FormStuff r -> Ui.Attribute Msg
 viewFullScreenFormOverlay model =
-    viewFullSreenOverlay (viewForm model)
+    viewFullScreenOverlay (viewForm model)
 
 
 viewForm : FormStuff r -> List (Ui.Element Msg)
@@ -504,7 +496,7 @@ viewForm model =
     , --  Client
       Input.text
         (textInputStyles
-            ++ [ Ui.width (Ui.px 240)
+            ++ [ Ui.width (Ui.px 320)
                ]
         )
         { onChange = InputWhoChanged
@@ -534,6 +526,7 @@ viewForm model =
                 ++ [ onEnter AddPreSaveSubTask
                    , Ui.htmlAttribute
                         (Html.Events.onBlur AddPreSaveSubTask)
+                   , Ui.width (Ui.px 480)
                    ]
             )
             { onChange = InputSubTaskChanged
@@ -848,16 +841,26 @@ addCallEncoder call subTasks =
                 [ ( "who", Json.Encode.string call.who )
                 , ( "comments", Json.Encode.string call.comments )
                 , ( "when", Json.Encode.int (Time.posixToMillis call.when) )
-
-                -- , ( "subtasks", Json.Encode.list subTasks )
+                , ( "subTasks"
+                  , Json.Encode.list
+                        (\st ->
+                            Json.Encode.object
+                                [ ( "text", Json.Encode.string st.text )
+                                , ( "done", Json.Encode.bool False )
+                                ]
+                        )
+                        subTasks
+                  )
                 ]
           )
         ]
 
 
-addedCallDecoder : Json.Decode.Decoder { dbCall : Call }
+addedCallDecoder : Json.Decode.Decoder { call : Call, subTasks : List SubTask }
 addedCallDecoder =
-    Json.Decode.map (\call -> { dbCall = call }) (Json.Decode.field "dbCall" callDecoder)
+    Json.Decode.map2 (\call subTasks -> { call = call, subTasks = subTasks })
+        (Json.Decode.field "call" callDecoder)
+        subTasksDecoder
 
 
 getCallsAndSubTasks : String -> Cmd Msg
@@ -868,6 +871,19 @@ getCallsAndSubTasks backendUrl =
 callsAndSubTasksDecoder : Json.Decode.Decoder { calls : List Call, subTasks : List SubTask }
 callsAndSubTasksDecoder =
     Json.Decode.map2 (\calls subTasks -> { calls = calls, subTasks = subTasks }) callsDecoder subTasksDecoder
+
+
+subTaskDecoder : Json.Decode.Decoder SubTask
+subTaskDecoder =
+    Json.Decode.map3 SubTask
+        (Json.Decode.field "callId" Json.Decode.int
+            |> Json.Decode.andThen
+                (\id ->
+                    Json.Decode.succeed (FromBackend id)
+                )
+        )
+        (Json.Decode.field "text" Json.Decode.string)
+        (Json.Decode.field "done" Json.Decode.bool)
 
 
 callDecoder : Json.Decode.Decoder Call
@@ -892,18 +908,7 @@ callsDecoder =
 subTasksDecoder : Json.Decode.Decoder (List SubTask)
 subTasksDecoder =
     Json.Decode.field "subTasks"
-        (Json.Decode.list
-            (Json.Decode.map3 SubTask
-                (Json.Decode.field "callId" Json.Decode.int
-                    |> Json.Decode.andThen
-                        (\id ->
-                            Json.Decode.succeed (FromBackend id)
-                        )
-                )
-                (Json.Decode.field "text" Json.Decode.string)
-                (Json.Decode.field "done" Json.Decode.bool)
-            )
-        )
+        (Json.Decode.list subTaskDecoder)
 
 
 anyErrorToString : Http.Error -> String

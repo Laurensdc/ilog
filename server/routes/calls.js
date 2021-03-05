@@ -76,12 +76,15 @@ router.put('/add', async (req, res) => {
     const callId = dbCall.id;
 
     const subTasks = getParsedSubTasks(callId, call.subTasks);
+
+    h.print.colored('subtasks', 'magenta');
+    h.print.colored(call.subTasks, 'magenta');
     const dbSubTasks = await SubTask.bulkCreate(subTasks);
 
     return res.status(200).json({
       message: 'Added call to DB',
-      dbCall,
-      dbSubTasks,
+      call: dbCall,
+      subTasks: dbSubTasks,
     });
   } catch (err) {
     h.print.err(err);

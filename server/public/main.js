@@ -11698,22 +11698,22 @@ var $author$project$Main$SubTask = F3(
 		return {callId: callId, done: done, text: text};
 	});
 var $elm$json$Json$Decode$bool = _Json_decodeBool;
+var $author$project$Main$subTaskDecoder = A4(
+	$elm$json$Json$Decode$map3,
+	$author$project$Main$SubTask,
+	A2(
+		$elm$json$Json$Decode$andThen,
+		function (id) {
+			return $elm$json$Json$Decode$succeed(
+				$author$project$Main$FromBackend(id));
+		},
+		A2($elm$json$Json$Decode$field, 'callId', $elm$json$Json$Decode$int)),
+	A2($elm$json$Json$Decode$field, 'text', $elm$json$Json$Decode$string),
+	A2($elm$json$Json$Decode$field, 'done', $elm$json$Json$Decode$bool));
 var $author$project$Main$subTasksDecoder = A2(
 	$elm$json$Json$Decode$field,
 	'subTasks',
-	$elm$json$Json$Decode$list(
-		A4(
-			$elm$json$Json$Decode$map3,
-			$author$project$Main$SubTask,
-			A2(
-				$elm$json$Json$Decode$andThen,
-				function (id) {
-					return $elm$json$Json$Decode$succeed(
-						$author$project$Main$FromBackend(id));
-				},
-				A2($elm$json$Json$Decode$field, 'callId', $elm$json$Json$Decode$int)),
-			A2($elm$json$Json$Decode$field, 'text', $elm$json$Json$Decode$string),
-			A2($elm$json$Json$Decode$field, 'done', $elm$json$Json$Decode$bool))));
+	$elm$json$Json$Decode$list($author$project$Main$subTaskDecoder));
 var $author$project$Main$callsAndSubTasksDecoder = A3(
 	$elm$json$Json$Decode$map2,
 	F2(
@@ -12029,6 +12029,7 @@ var $author$project$Main$Creating = {$: 'Creating'};
 var $author$project$Main$AddedCall = function (a) {
 	return {$: 'AddedCall', a: a};
 };
+var $elm$json$Json$Encode$bool = _Json_wrap;
 var $elm$json$Json$Encode$int = _Json_wrap;
 var $elm$time$Time$posixToMillis = function (_v0) {
 	var millis = _v0.a;
@@ -12053,16 +12054,35 @@ var $author$project$Main$addCallEncoder = F2(
 								_Utils_Tuple2(
 								'when',
 								$elm$json$Json$Encode$int(
-									$elm$time$Time$posixToMillis(call.when)))
+									$elm$time$Time$posixToMillis(call.when))),
+								_Utils_Tuple2(
+								'subTasks',
+								A2(
+									$elm$json$Json$Encode$list,
+									function (st) {
+										return $elm$json$Json$Encode$object(
+											_List_fromArray(
+												[
+													_Utils_Tuple2(
+													'text',
+													$elm$json$Json$Encode$string(st.text)),
+													_Utils_Tuple2(
+													'done',
+													$elm$json$Json$Encode$bool(false))
+												]));
+									},
+									subTasks))
 							])))
 				]));
 	});
-var $author$project$Main$addedCallDecoder = A2(
-	$elm$json$Json$Decode$map,
-	function (call) {
-		return {dbCall: call};
-	},
-	A2($elm$json$Json$Decode$field, 'dbCall', $author$project$Main$callDecoder));
+var $author$project$Main$addedCallDecoder = A3(
+	$elm$json$Json$Decode$map2,
+	F2(
+		function (call, subTasks) {
+			return {call: call, subTasks: subTasks};
+		}),
+	A2($elm$json$Json$Decode$field, 'call', $author$project$Main$callDecoder),
+	$author$project$Main$subTasksDecoder);
 var $elm$http$Http$jsonBody = function (value) {
 	return A2(
 		_Http_pair,
@@ -12207,7 +12227,14 @@ var $author$project$Main$update = F2(
 						$author$project$Main$addCall,
 						model.backendUrl,
 						{comments: model.inputComments, id: $author$project$Main$Creating, when: time, who: model.inputWho},
-						_List_Nil));
+						A2(
+							$elm$core$List$map,
+							function (subTask) {
+								return _Utils_update(
+									subTask,
+									{callId: $author$project$Main$Creating});
+							},
+							model.preSaveSubTasks)));
 			case 'DeletePreSaveSubTask':
 				var subtask = msg.a;
 				return _Utils_Tuple2(
@@ -12296,7 +12323,11 @@ var $author$project$Main$update = F2(
 					return A2(
 						$elm$core$Debug$log,
 						$author$project$Main$anyErrorToString(err),
-						_Utils_Tuple2(model, $elm$core$Platform$Cmd$none));
+						_Utils_Tuple2(
+							_Utils_update(
+								model,
+								{loading: false}),
+							$elm$core$Platform$Cmd$none));
 				}
 			default:
 				var httpResult = msg.a;
@@ -12309,12 +12340,13 @@ var $author$project$Main$update = F2(
 								calls: _Utils_ap(
 									model.calls,
 									_List_fromArray(
-										[result.dbCall])),
+										[result.call])),
 								formVisible: false,
 								inputComments: '',
 								inputWho: '',
 								loading: false,
-								preSaveSubTasks: _List_Nil
+								preSaveSubTasks: _List_Nil,
+								subTasks: _Utils_ap(model.subTasks, result.subTasks)
 							}),
 						$elm$core$Platform$Cmd$none);
 				} else {
@@ -12322,7 +12354,11 @@ var $author$project$Main$update = F2(
 					return A2(
 						$elm$core$Debug$log,
 						$author$project$Main$anyErrorToString(err),
-						_Utils_Tuple2(model, $elm$core$Platform$Cmd$none));
+						_Utils_Tuple2(
+							_Utils_update(
+								model,
+								{loading: false}),
+							$elm$core$Platform$Cmd$none));
 				}
 		}
 	});
@@ -12359,7 +12395,6 @@ var $mdgriffith$elm_ui$Internal$Model$Unkeyed = function (a) {
 };
 var $mdgriffith$elm_ui$Internal$Model$AsEl = {$: 'AsEl'};
 var $mdgriffith$elm_ui$Internal$Model$asEl = $mdgriffith$elm_ui$Internal$Model$AsEl;
-var $elm$json$Json$Encode$bool = _Json_wrap;
 var $elm$html$Html$Attributes$boolProperty = F2(
 	function (key, bool) {
 		return A2(
@@ -20246,7 +20281,7 @@ var $author$project$Main$viewForm = function (model) {
 				_List_fromArray(
 					[
 						$mdgriffith$elm_ui$Element$width(
-						$mdgriffith$elm_ui$Element$px(240))
+						$mdgriffith$elm_ui$Element$px(320))
 					])),
 			{
 				label: A2(
@@ -20299,7 +20334,9 @@ var $author$project$Main$viewForm = function (model) {
 							[
 								$author$project$Main$onEnter($author$project$Main$AddPreSaveSubTask),
 								$mdgriffith$elm_ui$Element$htmlAttribute(
-								$elm$html$Html$Events$onBlur($author$project$Main$AddPreSaveSubTask))
+								$elm$html$Html$Events$onBlur($author$project$Main$AddPreSaveSubTask)),
+								$mdgriffith$elm_ui$Element$width(
+								$mdgriffith$elm_ui$Element$px(480))
 							])),
 					{
 						label: A2(
@@ -20325,7 +20362,7 @@ var $author$project$Main$viewForm = function (model) {
 var $mdgriffith$elm_ui$Element$Font$center = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$fontAlignment, $mdgriffith$elm_ui$Internal$Style$classes.textCenter);
 var $mdgriffith$elm_ui$Internal$Model$CenterY = {$: 'CenterY'};
 var $mdgriffith$elm_ui$Element$centerY = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$CenterY);
-var $author$project$Main$viewFullSreenOverlay = function (stuffInside) {
+var $author$project$Main$viewFullScreenOverlay = function (stuffInside) {
 	return $mdgriffith$elm_ui$Element$inFront(
 		A2(
 			$mdgriffith$elm_ui$Element$el,
@@ -20364,7 +20401,7 @@ var $author$project$Main$viewFullSreenOverlay = function (stuffInside) {
 				stuffInside)));
 };
 var $author$project$Main$viewFullScreenFormOverlay = function (model) {
-	return $author$project$Main$viewFullSreenOverlay(
+	return $author$project$Main$viewFullScreenOverlay(
 		$author$project$Main$viewForm(model));
 };
 var $author$project$Main$viewSearchCalls = function (model) {
@@ -20445,6 +20482,11 @@ var $author$project$Main$viewSearchbar = function (text) {
 			text: text
 		});
 };
+var $author$project$Main$viewSpinner = $author$project$Main$viewFullScreenOverlay(
+	_List_fromArray(
+		[
+			$mdgriffith$elm_ui$Element$text('Loading...')
+		]));
 var $waratuman$time_extra$Time$Extra$setHour = F3(
 	function (z, h, t) {
 		var t_ = $elm$time$Time$posixToMillis(t);
@@ -20631,6 +20673,7 @@ var $author$project$Main$viewUnarchivedCalls = function (model) {
 			])) : $mdgriffith$elm_ui$Element$none;
 };
 var $author$project$Main$view = function (model) {
+	var spinnerIfVisible = model.loading ? $author$project$Main$viewSpinner : $author$project$Main$noAttr;
 	var overlayFormIfVisible = model.formVisible ? $author$project$Main$viewFullScreenFormOverlay(model) : $author$project$Main$noAttr;
 	return A3(
 		$mdgriffith$elm_ui$Element$layoutWith,
@@ -20658,7 +20701,8 @@ var $author$project$Main$view = function (model) {
 					$mdgriffith$elm_ui$Element$Background$color(
 					$author$project$Main$color($author$project$Main$Bg)),
 					$mdgriffith$elm_ui$Element$padding(32),
-					overlayFormIfVisible
+					overlayFormIfVisible,
+					spinnerIfVisible
 				])),
 		A2(
 			$mdgriffith$elm_ui$Element$column,
@@ -20726,4 +20770,4 @@ var $author$project$Main$viewDocument = function (model) {
 var $author$project$Main$main = $elm$browser$Browser$document(
 	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$viewDocument});
 _Platform_export({'Main':{'init':$author$project$Main$main(
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.Call":{"args":[],"type":"{ id : Main.CallId, who : String.String, comments : String.String, when : Time.Posix }"},"Main.SubTask":{"args":[],"type":"{ callId : Main.CallId, text : String.String, done : Basics.Bool }"},"Time.Era":{"args":[],"type":"{ start : Basics.Int, offset : Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"InputWhoChanged":["String.String"],"InputCommentsChanged":["String.String"],"InputSubTaskChanged":["String.String"],"InputSearchChanged":["String.String"],"AddPreSaveSubTask":[],"AddCall":[],"AddCallWithTime":["Time.Posix"],"DeletePreSaveSubTask":["Main.SubTask"],"ToggleSubTask":["Main.SubTask"],"ArchiveCall":["Main.Call"],"OpenForm":[],"CloseForm":[],"GetTimeZone":["Time.Zone"],"SetToday":["Time.Posix"],"GotCallsAndSubTasks":["Result.Result Http.Error { calls : List.List Main.Call, subTasks : List.List Main.SubTask }"],"AddedCall":["Result.Result Http.Error { dbCall : Main.Call }"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Main.CallId":{"args":[],"tags":{"Creating":[],"FromBackend":["Basics.Int"]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"List.List":{"args":["a"],"tags":{}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Time.Zone":{"args":[],"tags":{"Zone":["Basics.Int","List.List Time.Era"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}}}}})}});}(this));
+	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.Call":{"args":[],"type":"{ id : Main.CallId, who : String.String, comments : String.String, when : Time.Posix }"},"Main.SubTask":{"args":[],"type":"{ callId : Main.CallId, text : String.String, done : Basics.Bool }"},"Time.Era":{"args":[],"type":"{ start : Basics.Int, offset : Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"InputWhoChanged":["String.String"],"InputCommentsChanged":["String.String"],"InputSubTaskChanged":["String.String"],"InputSearchChanged":["String.String"],"AddPreSaveSubTask":[],"AddCall":[],"AddCallWithTime":["Time.Posix"],"DeletePreSaveSubTask":["Main.SubTask"],"ToggleSubTask":["Main.SubTask"],"ArchiveCall":["Main.Call"],"OpenForm":[],"CloseForm":[],"GetTimeZone":["Time.Zone"],"SetToday":["Time.Posix"],"GotCallsAndSubTasks":["Result.Result Http.Error { calls : List.List Main.Call, subTasks : List.List Main.SubTask }"],"AddedCall":["Result.Result Http.Error { call : Main.Call, subTasks : List.List Main.SubTask }"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Main.CallId":{"args":[],"tags":{"Creating":[],"FromBackend":["Basics.Int"]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"List.List":{"args":["a"],"tags":{}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Time.Zone":{"args":[],"tags":{"Zone":["Basics.Int","List.List Time.Era"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}}}}})}});}(this));
