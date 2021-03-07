@@ -2,10 +2,11 @@
 
 ## Must have
 
-- Add a call to db
 - Edit existing call: message
-- Call: Archive/unarchive
-- SubTask: done/not done
+  -- Kind of done
+  TODO: Pass subTask callId or something
+  , subtasks not getting added
+  , on edit: subtask delete -> Backend
 
 ## Nice to have
 

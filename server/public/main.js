@@ -10887,6 +10887,7 @@ var $elm$core$Basics$never = function (_v0) {
 	}
 };
 var $elm$browser$Browser$document = _Browser_document;
+var $author$project$Main$Closed = {$: 'Closed'};
 var $author$project$Main$GetTimeZone = function (a) {
 	return {$: 'GetTimeZone', a: a};
 };
@@ -12005,7 +12006,7 @@ var $author$project$Main$init = function (_v0) {
 			archivedCalls: _List_Nil,
 			backendUrl: 'http://localhost:3000',
 			calls: _List_Nil,
-			formVisible: false,
+			formStatus: $author$project$Main$Closed,
 			inputComments: '',
 			inputSearch: '',
 			inputSubTask: '',
@@ -12033,7 +12034,11 @@ var $author$project$Main$subscriptions = function (_v0) {
 var $author$project$Main$AddCallWithTime = function (a) {
 	return {$: 'AddCallWithTime', a: a};
 };
+var $author$project$Main$AddingCall = {$: 'AddingCall'};
 var $author$project$Main$Creating = {$: 'Creating'};
+var $author$project$Main$Editing = function (a) {
+	return {$: 'Editing', a: a};
+};
 var $author$project$Main$AddedCall = function (a) {
 	return {$: 'AddedCall', a: a};
 };
@@ -12186,6 +12191,100 @@ var $author$project$Main$toggleSubTask = F2(
 				url: backendUrl + ('/subtasks/' + ($elm$core$String$fromInt(id) + '/done'))
 			});
 	});
+var $author$project$Main$UpdatedCall = function (a) {
+	return {$: 'UpdatedCall', a: a};
+};
+var $author$project$Main$editedCallDecoder = A3(
+	$elm$json$Json$Decode$map2,
+	F2(
+		function (call, subTasks) {
+			return {call: call, subTasks: subTasks};
+		}),
+	A2($elm$json$Json$Decode$field, 'call', $author$project$Main$callDecoder),
+	$author$project$Main$subTasksDecoder);
+var $elm$http$Http$post = function (r) {
+	return $elm$http$Http$request(
+		{body: r.body, expect: r.expect, headers: _List_Nil, method: 'POST', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
+};
+var $author$project$Main$updateCallEncoder = F2(
+	function (call, subTasks) {
+		return $elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'call',
+					$elm$json$Json$Encode$object(
+						_List_fromArray(
+							[
+								_Utils_Tuple2(
+								'who',
+								$elm$json$Json$Encode$string(call.who)),
+								_Utils_Tuple2(
+								'comments',
+								$elm$json$Json$Encode$string(call.comments))
+							]))),
+					_Utils_Tuple2(
+					'subTasks',
+					A2(
+						$elm$json$Json$Encode$list,
+						function (st) {
+							var subTaskId = function () {
+								var _v1 = st.id;
+								if (_v1.$ === 'Creating') {
+									return 0;
+								} else {
+									var i = _v1.a;
+									return i;
+								}
+							}();
+							var callId = function () {
+								var _v0 = st.callId;
+								if (_v0.$ === 'Creating') {
+									return 0;
+								} else {
+									var i = _v0.a;
+									return i;
+								}
+							}();
+							return $elm$json$Json$Encode$object(
+								_List_fromArray(
+									[
+										_Utils_Tuple2(
+										'callId',
+										$elm$json$Json$Encode$int(callId)),
+										_Utils_Tuple2(
+										'done',
+										$elm$json$Json$Encode$bool(st.done)),
+										_Utils_Tuple2(
+										'id',
+										$elm$json$Json$Encode$int(subTaskId)),
+										_Utils_Tuple2(
+										'text',
+										$elm$json$Json$Encode$string(st.text))
+									]));
+						},
+						subTasks))
+				]));
+	});
+var $author$project$Main$updateCall = F3(
+	function (backendUrl, call, subTasks) {
+		var id = function () {
+			var _v0 = call.id;
+			if (_v0.$ === 'Creating') {
+				return 0;
+			} else {
+				var i = _v0.a;
+				return i;
+			}
+		}();
+		return $elm$http$Http$post(
+			{
+				body: $elm$http$Http$jsonBody(
+					A2($author$project$Main$updateCallEncoder, call, subTasks)),
+				expect: A2($elm$http$Http$expectJson, $author$project$Main$UpdatedCall, $author$project$Main$editedCallDecoder),
+				url: backendUrl + ('/calls/' + ($elm$core$String$fromInt(id) + '/edit'))
+			});
+	});
 var $author$project$Main$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -12231,28 +12330,6 @@ var $author$project$Main$update = F2(
 									]))
 						}),
 					$elm$core$Platform$Cmd$none);
-			case 'AddCall':
-				return _Utils_Tuple2(
-					model,
-					A2($elm$core$Task$perform, $author$project$Main$AddCallWithTime, $elm$time$Time$now));
-			case 'AddCallWithTime':
-				var time = msg.a;
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{loading: true}),
-					A3(
-						$author$project$Main$addCall,
-						model.backendUrl,
-						{comments: model.inputComments, id: $author$project$Main$Creating, isArchived: false, when: time, who: model.inputWho},
-						A2(
-							$elm$core$List$map,
-							function (subTask) {
-								return _Utils_update(
-									subTask,
-									{callId: $author$project$Main$Creating});
-							},
-							model.preSaveSubTasks)));
 			case 'DeletePreSaveSubTask':
 				var subtask = msg.a;
 				return _Utils_Tuple2(
@@ -12281,17 +12358,41 @@ var $author$project$Main$update = F2(
 						model,
 						{today: time}),
 					$elm$core$Platform$Cmd$none);
-			case 'OpenForm':
+			case 'OpenFormToAddCall':
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{formVisible: true}),
+						{formStatus: $author$project$Main$AddingCall}),
 					$author$project$Main$sendMessage('Test'));
 			case 'CloseForm':
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{formVisible: false}),
+						{formStatus: $author$project$Main$Closed}),
+					$elm$core$Platform$Cmd$none);
+			case 'OpenFormToEditCall':
+				var call = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							formStatus: $author$project$Main$Editing(call),
+							inputComments: call.comments,
+							inputSubTask: '',
+							inputWho: call.who,
+							preSaveSubTasks: A2(
+								$elm$core$List$filter,
+								function (st) {
+									return _Utils_eq(st.callId, call.id);
+								},
+								model.subTasks)
+						}),
+					$elm$core$Platform$Cmd$none);
+			case 'CloseEditForm':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{formStatus: $author$project$Main$Closed, inputComments: '', inputSubTask: '', inputWho: '', preSaveSubTasks: _List_Nil}),
 					$elm$core$Platform$Cmd$none);
 			case 'GotCallsAndSubTasks':
 				var httpResult = msg.a;
@@ -12328,6 +12429,28 @@ var $author$project$Main$update = F2(
 								{loading: false}),
 							$elm$core$Platform$Cmd$none));
 				}
+			case 'AddCall':
+				return _Utils_Tuple2(
+					model,
+					A2($elm$core$Task$perform, $author$project$Main$AddCallWithTime, $elm$time$Time$now));
+			case 'AddCallWithTime':
+				var time = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{loading: true}),
+					A3(
+						$author$project$Main$addCall,
+						model.backendUrl,
+						{comments: model.inputComments, id: $author$project$Main$Creating, isArchived: false, when: time, who: model.inputWho},
+						A2(
+							$elm$core$List$map,
+							function (subTask) {
+								return _Utils_update(
+									subTask,
+									{callId: $author$project$Main$Creating});
+							},
+							model.preSaveSubTasks)));
 			case 'AddedCall':
 				var httpResult = msg.a;
 				if (httpResult.$ === 'Ok') {
@@ -12340,7 +12463,7 @@ var $author$project$Main$update = F2(
 									model.calls,
 									_List_fromArray(
 										[result.call])),
-								formVisible: false,
+								formStatus: $author$project$Main$Closed,
 								inputComments: '',
 								inputWho: '',
 								loading: false,
@@ -12396,7 +12519,7 @@ var $author$project$Main$update = F2(
 				return _Utils_Tuple2(
 					model,
 					A2($author$project$Main$archiveCall, model.backendUrl, call));
-			default:
+			case 'ArchivedCall':
 				var httpResult = msg.a;
 				if (httpResult.$ === 'Ok') {
 					var call = httpResult.a;
@@ -12434,11 +12557,48 @@ var $author$project$Main$update = F2(
 								{loading: false}),
 							$elm$core$Platform$Cmd$none));
 				}
+			case 'UpdateCall':
+				var record = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{loading: true}),
+					A3($author$project$Main$updateCall, model.backendUrl, record.call, record.subTasks));
+			default:
+				var httpResult = msg.a;
+				if (httpResult.$ === 'Ok') {
+					var result = httpResult.a;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								calls: A2(
+									$elm$core$List$map,
+									function (c) {
+										return _Utils_eq(result.call.id, c.id) ? result.call : c;
+									},
+									model.calls),
+								formStatus: $author$project$Main$Closed,
+								loading: false,
+								subTasks: model.subTasks
+							}),
+						$elm$core$Platform$Cmd$none);
+				} else {
+					var err = httpResult.a;
+					return A2(
+						$elm$core$Debug$log,
+						$author$project$Main$anyErrorToString(err),
+						_Utils_Tuple2(
+							_Utils_update(
+								model,
+								{loading: false}),
+							$elm$core$Platform$Cmd$none));
+				}
 		}
 	});
 var $author$project$Main$Accented = {$: 'Accented'};
 var $author$project$Main$Bg = {$: 'Bg'};
-var $author$project$Main$OpenForm = {$: 'OpenForm'};
+var $author$project$Main$OpenFormToAddCall = {$: 'OpenFormToAddCall'};
 var $mdgriffith$elm_ui$Internal$Model$Class = F2(
 	function (a, b) {
 		return {$: 'Class', a: a, b: b};
@@ -18693,6 +18853,9 @@ var $mdgriffith$elm_ui$Element$spacingXY = F2(
 var $author$project$Main$ArchiveCall = function (a) {
 	return {$: 'ArchiveCall', a: a};
 };
+var $author$project$Main$OpenFormToEditCall = function (a) {
+	return {$: 'OpenFormToEditCall', a: a};
+};
 var $mdgriffith$elm_ui$Internal$Flag$fontAlignment = $mdgriffith$elm_ui$Internal$Flag$flag(12);
 var $mdgriffith$elm_ui$Element$Font$alignLeft = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$fontAlignment, $mdgriffith$elm_ui$Internal$Style$classes.textLeft);
 var $mdgriffith$elm_ui$Internal$Model$Right = {$: 'Right'};
@@ -18884,6 +19047,30 @@ var $mdgriffith$elm_ui$Element$Border$color = function (clr) {
 			'bc-' + $mdgriffith$elm_ui$Internal$Model$formatColorClass(clr),
 			'border-color',
 			clr));
+};
+var $lemol$ant_design_icons_elm$Ant$Icons$Svg$EditOutlined$viewWithAttributes = function (attributes) {
+	return A2(
+		$elm$svg$Svg$svg,
+		_Utils_ap(
+			_List_fromArray(
+				[
+					$elm$svg$Svg$Attributes$viewBox('64 64 896 896')
+				]),
+			attributes),
+		_List_fromArray(
+			[
+				A2(
+				$elm$svg$Svg$path,
+				_List_fromArray(
+					[
+						$elm$svg$Svg$Attributes$d('M257.7 752c2 0 4-.2 6-.5L431.9 722c2-.4 3.9-1.3 5.3-2.8l423.9-423.9a9.96 9.96 0 000-14.1L694.9 114.9c-1.9-1.9-4.4-2.9-7.1-2.9s-5.2 1-7.1 2.9L256.8 538.8c-1.5 1.5-2.4 3.3-2.8 5.3l-29.5 168.2a33.5 33.5 0 009.4 29.8c6.6 6.4 14.9 9.9 23.8 9.9zm67.4-174.4L687.8 215l73.3 73.3-362.7 362.6-88.9 15.7 15.6-89zM880 836H144c-17.7 0-32 14.3-32 32v36c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-36c0-17.7-14.3-32-32-32z')
+					]),
+				_List_Nil)
+			]));
+};
+var $lemol$ant_design_icons_elm$Ant$Icons$Svg$editOutlined = $lemol$ant_design_icons_elm$Ant$Icons$Svg$EditOutlined$viewWithAttributes;
+var $lemol$ant_design_icons_elm_ui$Ant$Icons$editOutlined = function (attrs) {
+	return A2($lemol$ant_design_icons_elm_ui$Ant$Icon$icon, attrs, $lemol$ant_design_icons_elm$Ant$Icons$Svg$editOutlined);
 };
 var $lemol$ant_design_icons_elm_ui$Ant$Icon$Width = function (a) {
 	return {$: 'Width', a: a};
@@ -19284,21 +19471,41 @@ var $author$project$Main$viewCalls = F3(
 						_List_fromArray(
 							[
 								A2(
-								$mdgriffith$elm_ui$Element$el,
+								$mdgriffith$elm_ui$Element$column,
 								_List_fromArray(
 									[
 										$mdgriffith$elm_ui$Element$width(
 										$mdgriffith$elm_ui$Element$px(48)),
 										$mdgriffith$elm_ui$Element$alignTop,
-										$mdgriffith$elm_ui$Element$Events$onClick(
-										$author$project$Main$ArchiveCall(call)),
-										$mdgriffith$elm_ui$Element$pointer
+										A2($mdgriffith$elm_ui$Element$spacingXY, 0, 16)
 									]),
-								options.archived ? $lemol$ant_design_icons_elm_ui$Ant$Icons$checkSquareFilled(
-									_List_fromArray(
-										[$author$project$Main$iconsize])) : $lemol$ant_design_icons_elm_ui$Ant$Icons$borderOutlined(
-									_List_fromArray(
-										[$author$project$Main$iconsize]))),
+								_List_fromArray(
+									[
+										A2(
+										$mdgriffith$elm_ui$Element$el,
+										_List_fromArray(
+											[
+												$mdgriffith$elm_ui$Element$Events$onClick(
+												$author$project$Main$ArchiveCall(call)),
+												$mdgriffith$elm_ui$Element$pointer
+											]),
+										options.archived ? $lemol$ant_design_icons_elm_ui$Ant$Icons$checkSquareFilled(
+											_List_fromArray(
+												[$author$project$Main$iconsize])) : $lemol$ant_design_icons_elm_ui$Ant$Icons$borderOutlined(
+											_List_fromArray(
+												[$author$project$Main$iconsize]))),
+										A2(
+										$mdgriffith$elm_ui$Element$el,
+										_List_fromArray(
+											[
+												$mdgriffith$elm_ui$Element$Events$onClick(
+												$author$project$Main$OpenFormToEditCall(call)),
+												$mdgriffith$elm_ui$Element$pointer
+											]),
+										$lemol$ant_design_icons_elm_ui$Ant$Icons$editOutlined(
+											_List_fromArray(
+												[$author$project$Main$iconsize])))
+									])),
 								A2(
 								$mdgriffith$elm_ui$Element$column,
 								_List_fromArray(
@@ -19381,6 +19588,7 @@ var $author$project$Main$viewArchivedCalls = function (model) {
 };
 var $author$project$Main$AddCall = {$: 'AddCall'};
 var $author$project$Main$AddPreSaveSubTask = {$: 'AddPreSaveSubTask'};
+var $author$project$Main$CloseEditForm = {$: 'CloseEditForm'};
 var $author$project$Main$CloseForm = {$: 'CloseForm'};
 var $author$project$Main$InputCommentsChanged = function (a) {
 	return {$: 'InputCommentsChanged', a: a};
@@ -19390,6 +19598,9 @@ var $author$project$Main$InputSubTaskChanged = function (a) {
 };
 var $author$project$Main$InputWhoChanged = function (a) {
 	return {$: 'InputWhoChanged', a: a};
+};
+var $author$project$Main$UpdateCall = function (a) {
+	return {$: 'UpdateCall', a: a};
 };
 var $lemol$ant_design_icons_elm$Ant$Icons$Svg$CloseCircleOutlined$viewWithAttributes = function (attributes) {
 	return A2(
@@ -20361,7 +20572,18 @@ var $author$project$Main$viewForm = function (model) {
 						$mdgriffith$elm_ui$Element$el,
 						_List_fromArray(
 							[
-								$mdgriffith$elm_ui$Element$Events$onClick($author$project$Main$CloseForm)
+								function () {
+								var _v0 = model.formStatus;
+								switch (_v0.$) {
+									case 'AddingCall':
+										return $mdgriffith$elm_ui$Element$Events$onClick($author$project$Main$CloseForm);
+									case 'Editing':
+										var call = _v0.a;
+										return $mdgriffith$elm_ui$Element$Events$onClick($author$project$Main$CloseEditForm);
+									default:
+										return $author$project$Main$noAttr;
+								}
+							}()
 							]),
 						$lemol$ant_design_icons_elm_ui$Ant$Icons$closeCircleOutlined(
 							_List_fromArray(
@@ -20451,7 +20673,27 @@ var $author$project$Main$viewForm = function (model) {
 			$mdgriffith$elm_ui$Element$column,
 			_List_Nil,
 			$author$project$Main$viewPreSaveSubTasks(model)),
-			A2($author$project$Main$button, 'Gesprek opslaan', $author$project$Main$AddCall)
+			A2(
+			$author$project$Main$button,
+			'Gesprek opslaan',
+			function () {
+				var _v1 = model.formStatus;
+				switch (_v1.$) {
+					case 'AddingCall':
+						return $author$project$Main$AddCall;
+					case 'Editing':
+						var call = _v1.a;
+						return $author$project$Main$UpdateCall(
+							{
+								call: _Utils_update(
+									call,
+									{comments: model.inputComments, who: model.inputWho}),
+								subTasks: model.preSaveSubTasks
+							});
+					default:
+						return $author$project$Main$CloseForm;
+				}
+			}())
 		]);
 };
 var $mdgriffith$elm_ui$Element$Font$center = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$fontAlignment, $mdgriffith$elm_ui$Internal$Style$classes.textCenter);
@@ -20767,7 +21009,18 @@ var $author$project$Main$viewUnarchivedCalls = function (model) {
 };
 var $author$project$Main$view = function (model) {
 	var spinnerIfVisible = model.loading ? $author$project$Main$viewSpinner : $author$project$Main$noAttr;
-	var overlayFormIfVisible = model.formVisible ? $author$project$Main$viewFullScreenFormOverlay(model) : $author$project$Main$noAttr;
+	var overlayFormIfVisible = function () {
+		var _v0 = model.formStatus;
+		switch (_v0.$) {
+			case 'Editing':
+				var call = _v0.a;
+				return $author$project$Main$viewFullScreenFormOverlay(model);
+			case 'AddingCall':
+				return $author$project$Main$viewFullScreenFormOverlay(model);
+			default:
+				return $author$project$Main$noAttr;
+		}
+	}();
 	return A3(
 		$mdgriffith$elm_ui$Element$layoutWith,
 		{
@@ -20829,7 +21082,7 @@ var $author$project$Main$view = function (model) {
 							A2(
 							$mdgriffith$elm_ui$Element$el,
 							_List_Nil,
-							A2($author$project$Main$button, 'Gesprek toevoegen', $author$project$Main$OpenForm))
+							A2($author$project$Main$button, 'Gesprek toevoegen', $author$project$Main$OpenFormToAddCall))
 						])),
 					(model.inputSearch === '') ? $author$project$Main$viewUnarchivedCalls(model) : $mdgriffith$elm_ui$Element$none,
 					(model.inputSearch === '') ? A2(
@@ -20863,4 +21116,4 @@ var $author$project$Main$viewDocument = function (model) {
 var $author$project$Main$main = $elm$browser$Browser$document(
 	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$viewDocument});
 _Platform_export({'Main':{'init':$author$project$Main$main(
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.Call":{"args":[],"type":"{ id : Main.AppId, who : String.String, comments : String.String, when : Time.Posix, isArchived : Basics.Bool }"},"Main.SubTask":{"args":[],"type":"{ id : Main.AppId, callId : Main.AppId, text : String.String, done : Basics.Bool }"},"Time.Era":{"args":[],"type":"{ start : Basics.Int, offset : Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"InputWhoChanged":["String.String"],"InputCommentsChanged":["String.String"],"InputSubTaskChanged":["String.String"],"InputSearchChanged":["String.String"],"AddPreSaveSubTask":[],"AddCall":[],"AddCallWithTime":["Time.Posix"],"DeletePreSaveSubTask":["Main.SubTask"],"ToggleSubTask":["Main.SubTask"],"ArchiveCall":["Main.Call"],"OpenForm":[],"CloseForm":[],"GetTimeZone":["Time.Zone"],"SetToday":["Time.Posix"],"GotCallsAndSubTasks":["Result.Result Http.Error { calls : List.List Main.Call, subTasks : List.List Main.SubTask }"],"AddedCall":["Result.Result Http.Error { call : Main.Call, subTasks : List.List Main.SubTask }"],"ToggledSubTask":["Result.Result Http.Error Main.SubTask"],"ArchivedCall":["Result.Result Http.Error Main.Call"]}},"Main.AppId":{"args":[],"tags":{"Creating":[],"FromBackend":["Basics.Int"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"List.List":{"args":["a"],"tags":{}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Time.Zone":{"args":[],"tags":{"Zone":["Basics.Int","List.List Time.Era"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}}}}})}});}(this));
+	$elm$json$Json$Decode$succeed(_Utils_Tuple0))({"versions":{"elm":"0.19.1"},"types":{"message":"Main.Msg","aliases":{"Main.Call":{"args":[],"type":"{ id : Main.AppId, who : String.String, comments : String.String, when : Time.Posix, isArchived : Basics.Bool }"},"Main.SubTask":{"args":[],"type":"{ id : Main.AppId, callId : Main.AppId, text : String.String, done : Basics.Bool }"},"Time.Era":{"args":[],"type":"{ start : Basics.Int, offset : Basics.Int }"}},"unions":{"Main.Msg":{"args":[],"tags":{"InputWhoChanged":["String.String"],"InputCommentsChanged":["String.String"],"InputSubTaskChanged":["String.String"],"InputSearchChanged":["String.String"],"AddPreSaveSubTask":[],"DeletePreSaveSubTask":["Main.SubTask"],"ArchiveCall":["Main.Call"],"OpenFormToAddCall":[],"CloseForm":[],"OpenFormToEditCall":["Main.Call"],"CloseEditForm":[],"GetTimeZone":["Time.Zone"],"SetToday":["Time.Posix"],"AddCall":[],"AddCallWithTime":["Time.Posix"],"ToggleSubTask":["Main.SubTask"],"GotCallsAndSubTasks":["Result.Result Http.Error { calls : List.List Main.Call, subTasks : List.List Main.SubTask }"],"AddedCall":["Result.Result Http.Error { call : Main.Call, subTasks : List.List Main.SubTask }"],"ToggledSubTask":["Result.Result Http.Error Main.SubTask"],"ArchivedCall":["Result.Result Http.Error Main.Call"],"UpdateCall":["{ call : Main.Call, subTasks : List.List Main.SubTask }"],"UpdatedCall":["Result.Result Http.Error { call : Main.Call, subTasks : List.List Main.SubTask }"]}},"Main.AppId":{"args":[],"tags":{"Creating":[],"FromBackend":["Basics.Int"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"List.List":{"args":["a"],"tags":{}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Time.Zone":{"args":[],"tags":{"Zone":["Basics.Int","List.List Time.Era"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}}}}})}});}(this));

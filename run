@@ -7,7 +7,7 @@ echo -e '\e[39m'
 
 echo -e '\e[33m# Building Elm'
 echo -e '\e[32m'
-Elm make elm/Main.elm --optimize --output server/public/main.js
+Elm make src/Main.elm --optimize --output server/public/main.js
 
 echo -e '\e[32mSuccess!'
 echo -e '\e[39m'

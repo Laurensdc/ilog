@@ -41,24 +41,36 @@ main =
 
 
 type alias Model =
-    FormStuff
-        { inputSearch : String
-        , formVisible : Bool
+    { -- FormStuff
+      inputWho : String
+    , inputComments : String
+    , inputSubTask : String
+    , preSaveSubTasks : List SubTask
+    , formStatus : FormStatus
 
-        -- Calls & subtasks (data)
-        , calls : List Call
-        , archivedCalls : List Call
-        , searchResults : List Call
-        , subTasks : List SubTask
+    -- Other Form stuff
+    , inputSearch : String
 
-        -- Time stuff
-        , timeZone : Time.Zone
-        , today : Time.Posix
+    -- Calls & subtasks (data)
+    , calls : List Call
+    , archivedCalls : List Call
+    , searchResults : List Call
+    , subTasks : List SubTask
 
-        -- Will need this to do http requests
-        , backendUrl : String
-        , loading : Bool
-        }
+    -- Time stuff
+    , timeZone : Time.Zone
+    , today : Time.Posix
+
+    -- Will need this to do http requests
+    , backendUrl : String
+    , loading : Bool
+    }
+
+
+type FormStatus
+    = Editing Call
+    | AddingCall
+    | Closed
 
 
 init : () -> ( Model, Cmd Msg )
@@ -68,9 +80,7 @@ init _ =
       , inputComments = ""
       , inputSubTask = ""
       , preSaveSubTasks = []
-
-      -- Not in the type alias of Form
-      , formVisible = False
+      , formStatus = Closed
 
       -- Other inputs
       , inputSearch = ""
@@ -103,6 +113,7 @@ type alias FormStuff r =
         , inputComments : String
         , inputSubTask : String
         , preSaveSubTasks : List SubTask
+        , formStatus : FormStatus
     }
 
 
@@ -150,22 +161,26 @@ type Msg
     | InputSearchChanged String
       -- Call & subTask stuff
     | AddPreSaveSubTask
-    | AddCall
-    | AddCallWithTime Time.Posix
     | DeletePreSaveSubTask SubTask
-    | ToggleSubTask SubTask
     | ArchiveCall Call
       -- Form stuff
-    | OpenForm
+    | OpenFormToAddCall
     | CloseForm
+    | OpenFormToEditCall Call
+    | CloseEditForm
       -- Time stuff
     | GetTimeZone Time.Zone
     | SetToday Time.Posix
       -- API stuff
+    | AddCall
+    | AddCallWithTime Time.Posix
+    | ToggleSubTask SubTask
     | GotCallsAndSubTasks (Result Http.Error { calls : List Call, subTasks : List SubTask })
     | AddedCall (Result Http.Error { call : Call, subTasks : List SubTask })
     | ToggledSubTask (Result Http.Error SubTask)
     | ArchivedCall (Result Http.Error Call)
+    | UpdateCall { call : Call, subTasks : List SubTask }
+    | UpdatedCall (Result Http.Error { call : Call, subTasks : List SubTask })
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -195,21 +210,6 @@ update msg model =
                 , Cmd.none
                 )
 
-        AddCall ->
-            ( model, Task.perform AddCallWithTime Time.now )
-
-        AddCallWithTime time ->
-            ( { model | loading = True }
-            , addCall model.backendUrl
-                { id = Creating
-                , who = model.inputWho
-                , comments = model.inputComments
-                , when = time
-                , isArchived = False
-                }
-                (List.map (\subTask -> { subTask | callId = Creating }) model.preSaveSubTasks)
-            )
-
         DeletePreSaveSubTask subtask ->
             ( { model
                 | preSaveSubTasks = List.filter (\s -> s /= subtask) model.preSaveSubTasks
@@ -223,11 +223,33 @@ update msg model =
         SetToday time ->
             ( { model | today = time }, Cmd.none )
 
-        OpenForm ->
-            ( { model | formVisible = True }, sendMessage "Test" )
+        OpenFormToAddCall ->
+            ( { model | formStatus = AddingCall }, sendMessage "Test" )
 
         CloseForm ->
-            ( { model | formVisible = False }, Cmd.none )
+            ( { model | formStatus = Closed }, Cmd.none )
+
+        OpenFormToEditCall call ->
+            ( { model
+                | formStatus = Editing call
+                , inputWho = call.who
+                , inputComments = call.comments
+                , inputSubTask = ""
+                , preSaveSubTasks = List.filter (\st -> st.callId == call.id) model.subTasks
+              }
+            , Cmd.none
+            )
+
+        CloseEditForm ->
+            ( { model
+                | formStatus = Closed
+                , inputWho = ""
+                , inputComments = ""
+                , inputSubTask = ""
+                , preSaveSubTasks = []
+              }
+            , Cmd.none
+            )
 
         -- HTTP msgs
         GotCallsAndSubTasks httpResult ->
@@ -246,6 +268,21 @@ update msg model =
                 Err err ->
                     Debug.log (anyErrorToString err) ( { model | loading = False }, Cmd.none )
 
+        AddCall ->
+            ( model, Task.perform AddCallWithTime Time.now )
+
+        AddCallWithTime time ->
+            ( { model | loading = True }
+            , addCall model.backendUrl
+                { id = Creating
+                , who = model.inputWho
+                , comments = model.inputComments
+                , when = time
+                , isArchived = False
+                }
+                (List.map (\subTask -> { subTask | callId = Creating }) model.preSaveSubTasks)
+            )
+
         AddedCall httpResult ->
             case httpResult of
                 Ok result ->
@@ -255,7 +292,7 @@ update msg model =
                         , preSaveSubTasks = []
                         , inputWho = ""
                         , inputComments = ""
-                        , formVisible = False
+                        , formStatus = Closed
                         , loading = False
                       }
                     , Cmd.none
@@ -326,6 +363,36 @@ update msg model =
                 Err err ->
                     Debug.log (anyErrorToString err) ( { model | loading = False }, Cmd.none )
 
+        UpdateCall record ->
+            ( { model | loading = True }
+            , updateCall model.backendUrl record.call record.subTasks
+            )
+
+        UpdatedCall httpResult ->
+            case httpResult of
+                Ok result ->
+                    ( { model
+                        | loading = False
+                        , formStatus = Closed
+                        , calls =
+                            List.map
+                                (\c ->
+                                    if result.call.id == c.id then
+                                        result.call
+
+                                    else
+                                        c
+                                )
+                                model.calls
+                        , subTasks = model.subTasks --TODO
+                      }
+                    , Cmd.none
+                    )
+
+                -- TODO : Handle errors in UI
+                Err err ->
+                    Debug.log (anyErrorToString err) ( { model | loading = False }, Cmd.none )
+
 
 {-| Checks calls for highest value of id.
 
@@ -384,11 +451,15 @@ view : Model -> Html.Html Msg
 view model =
     let
         overlayFormIfVisible =
-            if model.formVisible == True then
-                viewFullScreenFormOverlay model
+            case model.formStatus of
+                Editing call ->
+                    viewFullScreenFormOverlay model
 
-            else
-                noAttr
+                AddingCall ->
+                    viewFullScreenFormOverlay model
+
+                Closed ->
+                    noAttr
 
         spinnerIfVisible =
             if model.loading == True then
@@ -427,7 +498,7 @@ view model =
                 [ Ui.el [ Font.size 48, Font.bold ] (Ui.text "ILog")
                 , viewSearchbar model.inputSearch
                 , Ui.el []
-                    (button "Gesprek toevoegen" OpenForm)
+                    (button "Gesprek toevoegen" OpenFormToAddCall)
                 ]
             , -- Calls
               if model.inputSearch == "" then
@@ -515,7 +586,19 @@ viewForm model =
         [ Ui.el [ Font.size 24 ]
             (Ui.text "Voeg een gesprek toe")
         , Ui.el [ Ui.alignTop, Ui.alignRight ]
-            (Ui.el [ Element.Events.onClick CloseForm ] (Icon.closeCircleOutlined [ Ant.Icon.width 32 ]))
+            (Ui.el
+                [ case model.formStatus of
+                    AddingCall ->
+                        Element.Events.onClick CloseForm
+
+                    Editing call ->
+                        Element.Events.onClick CloseEditForm
+
+                    Closed ->
+                        noAttr
+                ]
+                (Icon.closeCircleOutlined [ Ant.Icon.width 32 ])
+            )
         ]
     , --  Client
       Input.text
@@ -560,7 +643,17 @@ viewForm model =
             }
         ]
     , Ui.column [] <| viewPreSaveSubTasks model
-    , button "Gesprek opslaan" AddCall
+    , button "Gesprek opslaan"
+        (case model.formStatus of
+            AddingCall ->
+                AddCall
+
+            Editing call ->
+                UpdateCall { call = { call | who = model.inputWho, comments = model.inputComments }, subTasks = model.preSaveSubTasks }
+
+            Closed ->
+                CloseForm
+        )
     ]
 
 
@@ -711,18 +804,30 @@ viewCalls calls subtasks options =
                            ]
                     )
                     [ -- Icon
-                      Ui.el
+                      Ui.column
                         [ Ui.width (Ui.px 48)
                         , Ui.alignTop
-                        , Element.Events.onClick (ArchiveCall call)
-                        , Ui.pointer
+                        , Ui.spacingXY 0 16
                         ]
-                        (if options.archived == True then
-                            Icon.checkSquareFilled [ iconsize ]
+                        [ -- Check icon
+                          Ui.el
+                            [ Element.Events.onClick (ArchiveCall call)
+                            , Ui.pointer
+                            ]
+                            (if options.archived == True then
+                                Icon.checkSquareFilled [ iconsize ]
 
-                         else
-                            Icon.borderOutlined [ iconsize ]
-                        )
+                             else
+                                Icon.borderOutlined [ iconsize ]
+                            )
+                        , Ui.el
+                            [ Element.Events.onClick (OpenFormToEditCall call)
+                            , Ui.pointer
+                            ]
+                            (Icon.editOutlined
+                                [ iconsize ]
+                            )
+                        ]
 
                     -- Date / time
                     , Ui.column [ Ui.alignTop ]
@@ -842,17 +947,78 @@ smoothTransition =
 -- HTTP
 
 
-addCall : String -> Call -> List SubTask -> Cmd Msg
-addCall backendUrl call subTasks =
-    Http.request
-        { method = "PUT"
-        , headers = []
-        , url = backendUrl ++ "/calls/add"
-        , body = Http.jsonBody (addCallEncoder call subTasks)
-        , expect = Http.expectJson AddedCall addedCallDecoder
-        , timeout = Nothing
-        , tracker = Nothing
+updateCall : String -> Call -> List SubTask -> Cmd Msg
+updateCall backendUrl call subTasks =
+    let
+        id =
+            case call.id of
+                Creating ->
+                    0
+
+                -- Todo: This isn't right
+                FromBackend i ->
+                    i
+    in
+    Http.post
+        { url = backendUrl ++ "/calls/" ++ String.fromInt id ++ "/edit"
+        , body = Http.jsonBody (updateCallEncoder call subTasks)
+        , expect = Http.expectJson UpdatedCall editedCallDecoder
         }
+
+
+updateCallEncoder : Call -> List SubTask -> Json.Encode.Value
+updateCallEncoder call subTasks =
+    Json.Encode.object
+        [ ( "call"
+          , Json.Encode.object
+                [ ( "who", Json.Encode.string call.who )
+                , ( "comments", Json.Encode.string call.comments )
+                ]
+          )
+        , ( "subTasks"
+          , Json.Encode.list
+                (\st ->
+                    let
+                        -- TODO : Meeeeeeeeeeh
+                        callId =
+                            case st.callId of
+                                Creating ->
+                                    0
+
+                                FromBackend i ->
+                                    i
+
+                        subTaskId =
+                            case st.id of
+                                Creating ->
+                                    0
+
+                                FromBackend i ->
+                                    i
+                    in
+                    Json.Encode.object
+                        [ ( "callId", Json.Encode.int callId )
+                        , ( "done", Json.Encode.bool st.done )
+                        , ( "id", Json.Encode.int subTaskId )
+                        , ( "text", Json.Encode.string st.text )
+                        ]
+                )
+                subTasks
+          )
+        ]
+
+
+{-| Same as addedCallDecoder, but definited separately because it is not necessarily the same
+-}
+editedCallDecoder : Json.Decode.Decoder { call : Call, subTasks : List SubTask }
+editedCallDecoder =
+    Json.Decode.map2 (\call subTasks -> { call = call, subTasks = subTasks })
+        (Json.Decode.field "call" callDecoder)
+        subTasksDecoder
+
+
+
+-- Toggle SubTask "done"
 
 
 toggleSubTask : String -> SubTask -> Cmd Msg
@@ -878,6 +1044,10 @@ toggledSubTaskDecoder =
     Json.Decode.field "updatedSubTask" subTaskDecoder
 
 
+
+-- Archive call
+
+
 archiveCall : String -> Call -> Cmd Msg
 archiveCall backendUrl call =
     let
@@ -899,6 +1069,23 @@ archiveCall backendUrl call =
 archivedCallDecoder : Json.Decode.Decoder Call
 archivedCallDecoder =
     Json.Decode.field "updatedCall" callDecoder
+
+
+
+-- Add call
+
+
+addCall : String -> Call -> List SubTask -> Cmd Msg
+addCall backendUrl call subTasks =
+    Http.request
+        { method = "PUT"
+        , headers = []
+        , url = backendUrl ++ "/calls/add"
+        , body = Http.jsonBody (addCallEncoder call subTasks)
+        , expect = Http.expectJson AddedCall addedCallDecoder
+        , timeout = Nothing
+        , tracker = Nothing
+        }
 
 
 addCallEncoder : Call -> List SubTask -> Json.Encode.Value
@@ -932,6 +1119,10 @@ addedCallDecoder =
         subTasksDecoder
 
 
+
+-- GET calls & subTasks
+
+
 getCallsAndSubTasks : String -> Cmd Msg
 getCallsAndSubTasks backendUrl =
     Http.get { url = backendUrl ++ "/calls", expect = Http.expectJson GotCallsAndSubTasks callsAndSubTasksDecoder }
@@ -940,6 +1131,10 @@ getCallsAndSubTasks backendUrl =
 callsAndSubTasksDecoder : Json.Decode.Decoder { calls : List Call, subTasks : List SubTask }
 callsAndSubTasksDecoder =
     Json.Decode.map2 (\calls subTasks -> { calls = calls, subTasks = subTasks }) callsDecoder subTasksDecoder
+
+
+
+-- Call & subtask decoder / basic blocks
 
 
 subTaskDecoder : Json.Decode.Decoder SubTask
@@ -985,6 +1180,10 @@ subTasksDecoder : Json.Decode.Decoder (List SubTask)
 subTasksDecoder =
     Json.Decode.field "subTasks"
         (Json.Decode.list subTaskDecoder)
+
+
+
+-- Other http helpers
 
 
 anyErrorToString : Http.Error -> String

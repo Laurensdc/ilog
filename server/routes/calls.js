@@ -146,6 +146,8 @@ router.post('/:id/edit', async (req, res) => {
     // but here only subTasks[] with id 2, 3 are passed
     // -> Delete subTask with id 1
 
+    // TODO Add subTasks that didn't exist yet!
+
     call.comments = newCall.comments;
     call.who = newCall.who;
     await call.save();
