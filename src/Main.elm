@@ -41,30 +41,23 @@ main =
 
 
 type alias Model =
-    { -- FormStuff
-      inputWho : String
-    , inputComments : String
-    , inputSubTask : String
-    , preSaveSubTasks : List SubTask
-    , formStatus : FormStatus
+    FormStuff
+        { -- Other Form stuff
+          inputSearch : String
 
-    -- Other Form stuff
-    , inputSearch : String
+        -- Calls & subtasks (data)
+        , calls : List Call
+        , archivedCalls : List Call
+        , subTasks : List SubTask
 
-    -- Calls & subtasks (data)
-    , calls : List Call
-    , archivedCalls : List Call
-    , searchResults : List Call
-    , subTasks : List SubTask
+        -- Time stuff
+        , timeZone : Time.Zone
+        , today : Time.Posix
 
-    -- Time stuff
-    , timeZone : Time.Zone
-    , today : Time.Posix
-
-    -- Will need this to do http requests
-    , backendUrl : String
-    , loading : Bool
-    }
+        -- Will need this to do http requests
+        , backendUrl : String
+        , loading : Bool
+        }
 
 
 type FormStatus
@@ -89,7 +82,6 @@ init _ =
       , calls = []
       , subTasks = []
       , archivedCalls = []
-      , searchResults = []
 
       -- Time stuff
       , timeZone = Time.utc
@@ -663,21 +655,21 @@ viewSearchCalls model =
         search =
             String.toLower model.inputSearch
 
+        dateFound call =
+            String.contains search (TimeStuff.toDutchWeekday model.timeZone call.when |> String.toLower)
+                || String.contains search (TimeStuff.toHumanDate model.timeZone call.when |> String.toLower)
+                || String.contains search (TimeStuff.toHumanTime model.timeZone call.when |> String.toLower)
+
+        whoFound call =
+            String.contains search (call.who |> String.toLower)
+
+        commentFound call =
+            String.contains search (call.comments |> String.toLower)
+
         filterer : Call -> Bool
         filterer =
-            \call ->
-                if
-                    String.contains search (call.who |> String.toLower)
-                        || String.contains search (TimeStuff.toDutchWeekday model.timeZone call.when |> String.toLower)
-                        || String.contains search (TimeStuff.toHumanDate model.timeZone call.when |> String.toLower)
-                        || String.contains search (TimeStuff.toHumanTime model.timeZone call.when |> String.toLower)
-                        || String.contains search (call.comments |> String.toLower)
-                    -- Todo: Search in calls' subTasks too?
-                then
-                    True
-
-                else
-                    False
+            -- Todo: Search in calls' subTasks too?
+            \call -> whoFound call || commentFound call || dateFound call
 
         foundCalls =
             List.filter filterer model.calls

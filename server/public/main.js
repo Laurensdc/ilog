@@ -12013,7 +12013,6 @@ var $author$project$Main$init = function (_v0) {
 			inputWho: '',
 			loading: true,
 			preSaveSubTasks: _List_Nil,
-			searchResults: _List_Nil,
 			subTasks: _List_Nil,
 			timeZone: $elm$time$Time$utc,
 			today: $elm$time$Time$millisToPosix(0)
@@ -20743,11 +20742,14 @@ var $author$project$Main$viewFullScreenFormOverlay = function (model) {
 };
 var $author$project$Main$viewSearchCalls = function (model) {
 	var search = $elm$core$String$toLower(model.inputSearch);
-	var filterer = function (call) {
-		return (A2(
+	var whoFound = function (call) {
+		return A2(
 			$elm$core$String$contains,
 			search,
-			$elm$core$String$toLower(call.who)) || (A2(
+			$elm$core$String$toLower(call.who));
+	};
+	var dateFound = function (call) {
+		return A2(
 			$elm$core$String$contains,
 			search,
 			$elm$core$String$toLower(
@@ -20755,14 +20757,20 @@ var $author$project$Main$viewSearchCalls = function (model) {
 			$elm$core$String$contains,
 			search,
 			$elm$core$String$toLower(
-				A2($author$project$TimeStuff$toHumanDate, model.timeZone, call.when))) || (A2(
+				A2($author$project$TimeStuff$toHumanDate, model.timeZone, call.when))) || A2(
 			$elm$core$String$contains,
 			search,
 			$elm$core$String$toLower(
-				A2($author$project$TimeStuff$toHumanTime, model.timeZone, call.when))) || A2(
+				A2($author$project$TimeStuff$toHumanTime, model.timeZone, call.when))));
+	};
+	var commentFound = function (call) {
+		return A2(
 			$elm$core$String$contains,
 			search,
-			$elm$core$String$toLower(call.comments)))))) ? true : false;
+			$elm$core$String$toLower(call.comments));
+	};
+	var filterer = function (call) {
+		return whoFound(call) || (commentFound(call) || dateFound(call));
 	};
 	var foundArchivedCalls = A2($elm$core$List$filter, filterer, model.archivedCalls);
 	var foundCalls = A2($elm$core$List$filter, filterer, model.calls);
