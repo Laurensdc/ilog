@@ -92,6 +92,7 @@ router.put('/add', async (req, res) => {
 router.post('/:id/edit', async (req, res) => {
   const id = req.params.id;
   const newCall = req.body.call;
+  const newSubTasks = req.body.subTasks;
 
   if (!id) {
     return res.status(400).json({
@@ -122,14 +123,41 @@ router.post('/:id/edit', async (req, res) => {
     }
   }
 
-  call.comments = newCall.comments;
-  call.who = newCall.who;
-  await call.save();
+  const subTasks = getParsedSubTasks(id, newSubTasks);
+  const updatedSubTasks = [];
 
-  return res.status(200).json({
-    message: 'Call updated',
-    call,
-  });
+  try {
+    if (subTasks.length > 0) {
+      for (let i = 0; i < subTasks.length; i++) {
+        h.print.colored('Updating subtask ' + subTasks[i].id, 'yellow');
+
+        const dbSubTask = await SubTask.findByPk(subTasks[i].id);
+        if (dbSubTask) {
+          dbSubTask.text = subTasks[i].text;
+          dbSubTask.done = subTasks[i].done;
+          await dbSubTask.save();
+          updatedSubTasks.push(dbSubTask);
+        }
+      }
+    }
+
+    // TODO Delete subTasks that aren't passed here but belong to call !
+    // E.g. call has subtasks with id 1, 2, 3
+    // but here only subTasks[] with id 2, 3 are passed
+    // -> Delete subTask with id 1
+
+    call.comments = newCall.comments;
+    call.who = newCall.who;
+    await call.save();
+
+    return res.status(200).json({
+      message: 'Call updated',
+      call,
+      subTasks: updatedSubTasks,
+    });
+  } catch (err) {
+    h.print.colored('ERROR' + err, 'red');
+  }
 });
 
 /**
@@ -182,12 +210,14 @@ function getParsedSubTasks(callId, subTasks) {
           // subTasks.done is present & is bool?
           if ('done' in st && typeof st.done === 'boolean') {
             return {
+              id: st.id,
               callId: callId,
               text,
               done: st.done,
             };
           } else {
             return {
+              id: st.id,
               callId: callId,
               text,
               done: false,
