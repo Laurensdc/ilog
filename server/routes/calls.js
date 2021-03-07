@@ -1,4 +1,5 @@
 const express = require('express');
+const { db } = require('../config');
 const h = require('../helpers');
 const router = express.Router();
 const { Call, SubTask } = require('../models');
@@ -132,6 +133,7 @@ router.post('/:id/edit', async (req, res) => {
         h.print.colored('Updating subtask ' + subTasks[i].id, 'yellow');
 
         const dbSubTask = await SubTask.findByPk(subTasks[i].id);
+
         if (dbSubTask) {
           dbSubTask.text = subTasks[i].text;
           dbSubTask.done = subTasks[i].done;
