@@ -2,6 +2,9 @@
 
 ## Build & run
 
+- Prerequisites:
+  [Git](https://git-scm.com/download/win), [Node.js](https://nodejs.org/en/download/) and [PostgreSQL](https://www.postgresql.org/download/)
+
 `./run`  
 Using the thing.
 
