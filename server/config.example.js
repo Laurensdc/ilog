@@ -1,4 +1,4 @@
-export default {
+module.exports = {
   db: {
     user: 'postgres',
     host: 'localhost',
@@ -6,4 +6,4 @@ export default {
     password: 'password',
     port: 5433,
   },
-}
+};
