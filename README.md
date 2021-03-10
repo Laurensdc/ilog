@@ -6,7 +6,10 @@
   [Git](https://git-scm.com/download/win), [Node.js](https://nodejs.org/en/download/), [PostgreSQL](https://www.postgresql.org/download/) and [Elm](https://guide.elm-lang.org/install/elm.html)
 
 - Create your PostgreSQL database.
+
 - `cd server && cp config-example.js config.js` and add your db login credentials.
+
+- `node server/scripts/resetdb` to create db tables.
 
 `./run` or open `run-win.bat` on Windows to run the app.
 
