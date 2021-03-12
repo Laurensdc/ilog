@@ -1,26 +1,18 @@
 module UiStuff exposing (..)
 
 import Ant.Icon
-import Ant.Icons as Icon
-import Browser
 import CallTypes exposing (..)
 import Element as Ui
 import Element.Background as Background
 import Element.Border as Border
-import Element.Events
 import Element.Font as Font
 import Element.Input as Input
 import Html
 import Html.Attributes
 import Html.Events
-import Http
 import Json.Decode
-import Json.Decode.Extra
-import Json.Encode
-import Task
 import Time
 import Time.Extra as Time
-import TimeStuff
 
 
 

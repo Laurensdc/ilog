@@ -11,7 +11,6 @@ import Element.Events
 import Element.Font as Font
 import Element.Input as Input
 import Html
-import Html.Attributes
 import Html.Events
 import Http
 import Json.Decode
@@ -599,6 +598,20 @@ viewForm model =
     ]
 
 
+{-| Subtasks before they are submitted
+-}
+viewPreSaveSubTasks : FormStuff r -> List (Ui.Element Msg)
+viewPreSaveSubTasks model =
+    List.map
+        (\subTask ->
+            Ui.row []
+                [ Ui.el [ Ui.paddingEach { top = 0, right = 16, bottom = 0, left = 0 } ] (Ui.text subTask.text)
+                , Ui.el [ Element.Events.onClick (DeletePreSaveSubTask subTask), Ui.pointer ] (Icon.deleteFilled [ iconsize ])
+                ]
+        )
+        model.preSaveSubTasks
+
+
 viewSearchCalls : Model -> Ui.Element Msg
 viewSearchCalls model =
     let
@@ -835,20 +848,6 @@ viewSubTasks call subtasks =
                 ]
         )
         filteredSubTasks
-
-
-{-| Subtasks before they are submitted
--}
-viewPreSaveSubTasks : FormStuff r -> List (Ui.Element Msg)
-viewPreSaveSubTasks model =
-    List.map
-        (\subTask ->
-            Ui.row []
-                [ Ui.el [ Ui.paddingEach { top = 0, right = 16, bottom = 0, left = 0 } ] (Ui.text subTask.text)
-                , Ui.el [ Element.Events.onClick (DeletePreSaveSubTask subTask), Ui.pointer ] (Icon.deleteFilled [ iconsize ])
-                ]
-        )
-        model.preSaveSubTasks
 
 
 
