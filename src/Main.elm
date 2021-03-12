@@ -258,7 +258,8 @@ update msg model =
 
                 -- TODO : Handle errors in UI
                 Err err ->
-                    Debug.log (anyErrorToString err) ( { model | loading = False }, Cmd.none )
+                    -- Debug.log (anyErrorToString err) ( { model | loading = False }, Cmd.none )
+                    ( model, Cmd.none )
 
         AddCall ->
             ( model, Task.perform AddCallWithTime Time.now )
@@ -292,7 +293,7 @@ update msg model =
 
                 -- TODO : Handle errors in UI
                 Err err ->
-                    Debug.log (anyErrorToString err) ( { model | loading = False }, Cmd.none )
+                    ( model, Cmd.none )
 
         ToggleSubTask subTask ->
             ( model
@@ -319,7 +320,7 @@ update msg model =
 
                 -- TODO : Handle errors in UI
                 Err err ->
-                    Debug.log (anyErrorToString err) ( { model | loading = False }, Cmd.none )
+                    ( model, Cmd.none )
 
         ArchiveCall call ->
             ( model
@@ -353,7 +354,7 @@ update msg model =
 
                 -- TODO : Handle errors in UI
                 Err err ->
-                    Debug.log (anyErrorToString err) ( { model | loading = False }, Cmd.none )
+                    ( model, Cmd.none )
 
         UpdateCall record ->
             ( { model | loading = True }
@@ -383,7 +384,7 @@ update msg model =
 
                 -- TODO : Handle errors in UI
                 Err err ->
-                    Debug.log (anyErrorToString err) ( { model | loading = False }, Cmd.none )
+                    ( model, Cmd.none )
 
 
 {-| Checks calls for highest value of id.
