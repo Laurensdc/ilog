@@ -3,6 +3,7 @@ port module Main exposing (..)
 import Ant.Icon
 import Ant.Icons as Icon
 import Browser
+import CallTypes exposing (..)
 import Element as Ui
 import Element.Background as Background
 import Element.Border as Border
@@ -107,28 +108,6 @@ type alias FormStuff r =
         , preSaveSubTasks : List SubTask
         , formStatus : FormStatus
     }
-
-
-type alias Call =
-    { id : AppId
-    , who : String
-    , comments : String
-    , when : Time.Posix
-    , isArchived : Bool
-    }
-
-
-type alias SubTask =
-    { id : AppId
-    , callId : AppId
-    , text : String
-    , done : Bool
-    }
-
-
-type AppId
-    = Creating
-    | FromBackend Int
 
 
 
