@@ -367,37 +367,6 @@ update msg model =
                     ( model, Cmd.none )
 
 
-{-| Checks calls for highest value of id.
-
-Returns a new highest id.
-Should become redundant when using actual API.
-
--}
-createNewCallId : Model -> AppId
-createNewCallId model =
-    let
-        max =
-            List.maximum
-                (List.map
-                    (\call ->
-                        case call.id of
-                            Creating ->
-                                -1
-
-                            FromBackend callid ->
-                                callid
-                    )
-                    model.calls
-                )
-    in
-    case max of
-        Nothing ->
-            Creating
-
-        Just x ->
-            FromBackend (x + 1)
-
-
 
 -- VIEW
 
