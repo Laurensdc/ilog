@@ -421,7 +421,7 @@ view model =
         }
         (fontGlobals
             ++ [ Background.color <| color Bg
-               , Ui.padding 32
+               , Ui.padding 8
 
                -- Form
                , overlayFormIfVisible
@@ -435,12 +435,7 @@ view model =
             , Ui.centerX
             , Ui.spacing 16
             ]
-            [ Ui.row [ Ui.width Ui.fill, Ui.spacingXY 32 0 ]
-                [ Ui.el [ Font.size 48, Font.bold ] (Ui.text "ILog")
-                , viewSearchbar model.inputSearch
-                , Ui.el []
-                    (button "Gesprek toevoegen" OpenFormToAddCall)
-                ]
+            [ viewHeader model
             , -- Calls
               if model.inputSearch == "" then
                 viewUnarchivedCalls model
@@ -466,6 +461,16 @@ view model =
                 Ui.none
             ]
         )
+
+
+viewHeader : Model -> Ui.Element Msg
+viewHeader model =
+    Ui.row [ Ui.width Ui.fill, Ui.spacingXY 32 0 ]
+        [ Ui.el [ Font.size 48, Font.bold ] (Ui.text "ILog")
+        , viewSearchbar model.inputSearch
+        , Ui.el []
+            (button "Gesprek toevoegen" OpenFormToAddCall)
+        ]
 
 
 viewSearchbar : String -> Ui.Element Msg
@@ -526,7 +531,7 @@ viewForm model =
       Ui.row [ Ui.width Ui.fill ]
         [ Ui.el [ UiStuff.fontBig ]
             (Ui.text "Voeg een gesprek toe")
-        , Ui.el [ Ui.alignTop, Ui.alignRight ]
+        , Ui.el [ Ui.alignTop, Ui.alignRight, Ui.pointer ]
             (Ui.el
                 [ case model.formStatus of
                     AddingCall ->
