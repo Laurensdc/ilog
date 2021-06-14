@@ -530,7 +530,18 @@ viewForm model =
     [ -- Close icon "x"
       Ui.row [ Ui.width Ui.fill ]
         [ Ui.el [ UiStuff.fontBig ]
-            (Ui.text "Voeg een gesprek toe")
+            (Ui.text
+                (case model.formStatus of
+                    AddingCall ->
+                        "Voeg een gesprek toe"
+
+                    Editing call ->
+                        "Gesprek met " ++ call.who ++ " aanpassen"
+
+                    Closed ->
+                        ""
+                )
+            )
         , Ui.el [ Ui.alignTop, Ui.alignRight, Ui.pointer ]
             (Ui.el
                 [ case model.formStatus of

@@ -81,7 +81,7 @@ noAttr =
 
 iconsize : Ant.Icon.Attribute msg
 iconsize =
-    Ant.Icon.width 24
+    Ant.Icon.width 18
 
 
 fontNormal =
