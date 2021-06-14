@@ -1,6 +1,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const open = require('open');
+const path = require('path');
 
 const app = express();
 // app.use(bodyParser.urlencoded({ extended: true }));
@@ -15,11 +17,13 @@ app.get('/test', (req, res) => {
   res.send('Express + TypeScript');
 });
 
-app.use('/', express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/calls', require('./routes/calls'));
 app.use('/subtasks', require('./routes/subtasks'));
 
 app.listen(PORT, () => {
-  console.log(`⚡️[server]: Server is running at https://localhost:${PORT}`);
+  console.log(`Server is running at http://localhost:${PORT}`);
+
+  open(`http://localhost:${PORT}`);
 });

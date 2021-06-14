@@ -1,6 +1,10 @@
 # ilog
 
-## Build & run
+## Build published app
+
+`./build` to package the app into executable which ends up in `./dist`
+
+## Build & run (semi dev mode)
 
 - Prerequisites:
   [Git](https://git-scm.com/download/win), [Node.js](https://nodejs.org/en/download/), [PostgreSQL](https://www.postgresql.org/download/) and [Elm](https://guide.elm-lang.org/install/elm.html)
