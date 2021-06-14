@@ -382,7 +382,7 @@ fontGlobals =
         , Font.typeface "Helvetica"
         , Font.sansSerif
         ]
-    , Font.size 18
+    , UiStuff.fontNormal
     , Font.light
     , Font.color <| color Text
     ]
@@ -524,7 +524,7 @@ viewForm model =
     -- Title
     [ -- Close icon "x"
       Ui.row [ Ui.width Ui.fill ]
-        [ Ui.el [ Font.size 24 ]
+        [ Ui.el [ UiStuff.fontBig ]
             (Ui.text "Voeg een gesprek toe")
         , Ui.el [ Ui.alignTop, Ui.alignRight ]
             (Ui.el
@@ -787,7 +787,7 @@ viewCalls calls subtasks options =
                     -- Date / time
                     , Ui.column [ Ui.alignTop ]
                         [ Ui.column []
-                            [ Ui.el [ Font.semiBold, Font.size 22, Ui.paddingEach { left = 0, right = 0, top = 0, bottom = 8 } ]
+                            [ Ui.el [ Font.semiBold, UiStuff.fontBig, Ui.paddingEach { left = 0, right = 0, top = 0, bottom = 8 } ]
                                 (Ui.text call.who)
                             , Ui.row [ Font.italic ]
                                 [ Ui.el [ Ui.width <| Ui.px 100 ] (Ui.text (TimeStuff.toDutchWeekday options.timeZone call.when))

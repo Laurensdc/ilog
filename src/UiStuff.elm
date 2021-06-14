@@ -35,7 +35,7 @@ button label onPressMsg =
 h2Styles : List (Ui.Attribute msg)
 h2Styles =
     [ Ui.paddingEach { top = 32, left = 0, right = 0, bottom = 0 }
-    , Font.size 22
+    , fontBig
     , Font.regular
     ]
 
@@ -82,6 +82,18 @@ noAttr =
 iconsize : Ant.Icon.Attribute msg
 iconsize =
     Ant.Icon.width 24
+
+
+fontNormal =
+    Font.size 16
+
+
+fontBig =
+    Font.size 20
+
+
+fontHuge =
+    Font.size 24
 
 
 
