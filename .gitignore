@@ -5,7 +5,7 @@ repl-temp-*
 
 # Server stuff
 node_modules
-server/public
+server/public/main.js
 
 config.js
 
