@@ -758,44 +758,21 @@ viewCalls calls subtasks options =
                            , Border.color <| lighten <| lighten <| color Bg
                            ]
                     )
-                    [ -- Icon
-                      Ui.column
-                        [ Ui.width (Ui.px 48)
-                        , Ui.alignTop
-                        , Ui.spacingXY 0 16
-                        ]
-                        [ -- Check icon
-                          Ui.el
-                            [ Element.Events.onClick (ArchiveCall call)
-                            , Ui.pointer
-                            ]
-                            (if options.archived == True then
-                                Icon.checkSquareFilled [ iconsize ]
-
-                             else
-                                Icon.checkSquareOutlined [ iconsize ]
-                            )
-                        , Ui.el
-                            [ Element.Events.onClick (OpenFormToEditCall call)
-                            , Ui.pointer
-                            ]
-                            (Icon.editOutlined
-                                [ iconsize ]
-                            )
-                        ]
+                    [ viewCallIcon call options
 
                     -- Date / time
                     , Ui.column [ Ui.alignTop ]
                         [ Ui.column []
                             -- Who (title)
-                            [ Ui.el [ Font.regular, UiStuff.fontBig, Ui.paddingEach { left = 0, right = 0, top = 0, bottom = 8 } ]
-                                (Ui.text call.who)
+                            [ viewCallWho call.who
 
                             -- Date
                             , Ui.row [ Font.italic ]
                                 [ Ui.el [ Ui.width <| Ui.px 100 ] (Ui.text (TimeStuff.toDutchWeekday options.timeZone call.when))
                                 , Ui.el [] (Ui.text (TimeStuff.toHumanDate options.timeZone call.when ++ " - " ++ TimeStuff.toHumanTime options.timeZone call.when))
                                 ]
+
+                            -- Comments
                             , Ui.paragraph [ Ui.paddingEach { top = 32, left = 0, right = 0, bottom = 0 } ] [ Ui.text call.comments ]
                             ]
                         ]
@@ -814,6 +791,40 @@ viewCalls calls subtasks options =
             )
             sortedCalls
         )
+
+
+viewCallIcon : Call -> { archived : Bool, timeZone : Time.Zone, today : Time.Posix } -> Ui.Element Msg
+viewCallIcon call options =
+    Ui.column
+        [ Ui.width (Ui.px 48)
+        , Ui.alignTop
+        , Ui.spacingXY 0 16
+        ]
+        [ -- Check icon
+          Ui.el
+            [ Element.Events.onClick (ArchiveCall call)
+            , Ui.pointer
+            ]
+            (if options.archived == True then
+                Icon.checkSquareFilled [ iconsize ]
+
+             else
+                Icon.checkSquareOutlined [ iconsize ]
+            )
+        , Ui.el
+            [ Element.Events.onClick (OpenFormToEditCall call)
+            , Ui.pointer
+            ]
+            (Icon.editOutlined
+                [ iconsize ]
+            )
+        ]
+
+
+viewCallWho : String -> Ui.Element msg
+viewCallWho who =
+    Ui.el [ Font.regular, UiStuff.fontBig, Ui.paddingEach { left = 0, right = 0, top = 0, bottom = 8 } ]
+        (Ui.text who)
 
 
 viewSubTasks : Call -> List SubTask -> List (Ui.Element Msg)
