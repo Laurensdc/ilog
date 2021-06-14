@@ -753,7 +753,7 @@ viewCalls calls subtasks options =
                 Ui.row
                     (archivedStyles
                         ++ [ Ui.width Ui.fill
-                           , Ui.paddingXY 0 32
+                           , Ui.paddingXY 0 16
                            , Border.widthEach { top = 0, left = 0, right = 0, bottom = 1 }
                            , Border.color <| lighten <| lighten <| color Bg
                            ]
@@ -773,7 +773,7 @@ viewCalls calls subtasks options =
                                 Icon.checkSquareFilled [ iconsize ]
 
                              else
-                                Icon.borderOutlined [ iconsize ]
+                                Icon.checkSquareOutlined [ iconsize ]
                             )
                         , Ui.el
                             [ Element.Events.onClick (OpenFormToEditCall call)
@@ -787,8 +787,11 @@ viewCalls calls subtasks options =
                     -- Date / time
                     , Ui.column [ Ui.alignTop ]
                         [ Ui.column []
-                            [ Ui.el [ Font.semiBold, UiStuff.fontBig, Ui.paddingEach { left = 0, right = 0, top = 0, bottom = 8 } ]
+                            -- Who (title)
+                            [ Ui.el [ Font.regular, UiStuff.fontBig, Ui.paddingEach { left = 0, right = 0, top = 0, bottom = 8 } ]
                                 (Ui.text call.who)
+
+                            -- Date
                             , Ui.row [ Font.italic ]
                                 [ Ui.el [ Ui.width <| Ui.px 100 ] (Ui.text (TimeStuff.toDutchWeekday options.timeZone call.when))
                                 , Ui.el [] (Ui.text (TimeStuff.toHumanDate options.timeZone call.when ++ " - " ++ TimeStuff.toHumanTime options.timeZone call.when))

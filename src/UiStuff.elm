@@ -34,9 +34,9 @@ button label onPressMsg =
 
 h2Styles : List (Ui.Attribute msg)
 h2Styles =
-    [ Ui.paddingEach { top = 32, left = 0, right = 0, bottom = 0 }
+    [ Ui.paddingEach { top = 16, left = 0, right = 0, bottom = 0 }
     , fontBig
-    , Font.regular
+    , Font.light
     ]
 
 
