@@ -25,5 +25,5 @@ app.use('/subtasks', require('./routes/subtasks'));
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
 
-  // open(`http://localhost:${PORT}`);
+  open(`http://localhost:${PORT}`);
 });

@@ -56,3 +56,10 @@ Commands:
   > **_WARNING_** You will lose all data!
 
   Wipes the whole database and recreates it.
+
+### Todos
+
+- Fix production version:
+  - No console.logs
+  - Open browser straight from node
+    (dev mode -> no browser open because the elm refresh keeps opening new tabs)
